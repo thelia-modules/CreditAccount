@@ -27,5 +27,8 @@
     ...
     </route>
     -->
+    <route id="creditAccount.addAmount" path="/admin/creditAccount/add">
+        <default key="_controller">CreditAccount\Controller\Admin\CreditAccountAdminController::addAmount</default>
+    </route>
 
 </routes>

@@ -21,26 +21,44 @@
 /*                                                                                   */
 /*************************************************************************************/
 
-namespace CreditAccount;
+namespace CreditAccount\Controller\Admin;
 
-use Propel\Runtime\Connection\ConnectionInterface;
-use Thelia\Install\Database;
-use Thelia\Module\BaseModule;
+use CreditAccount\CreditAccount;
+use CreditAccount\Event\CreditAccountEvent;
+use CreditAccount\Form\CreditAccountForm;
+use Thelia\Controller\Admin\BaseAdminController;
+use Thelia\Core\Security\AccessManager;
+use Thelia\Core\Security\Resource\AdminResources;
+use Thelia\Model\CustomerQuery;
 
-class CreditAccount extends BaseModule
+
+/**
+ * Class CreditAccountAdminController
+ * @package CreditAccount\Controller\Admin
+ * @author Manuel Raynaud <mraynaud@openstudio.fr>
+ */
+class CreditAccountAdminController extends BaseAdminController
 {
-    const CREDIT_ACCOUNT_ADD_AMOUNT = 'creditAccount.addAccount';
-    /*
-     * You may now override BaseModuleInterface methods, such as:
-     * install, destroy, preActivation, postActivation, preDeactivation, postDeactivation
-     *
-     * Have fun !
-     */
-
-    public function postActivation(ConnectionInterface $con = null)
+    public function addAmount()
     {
-        $database = new Database($con->getWrappedConnection());
+        if (null !== $response = $this->checkAuth(array(AdminResources::CUSTOMER), array('CreditAccount'), AccessManager::UPDATE)) {
+            return $response;
+        }
 
-        $database->insertSql(null, [__DIR__ . '/Config/thelia.sql']);
+        $form = new CreditAccountForm($this->getRequest());
+
+        try {
+            $creditForm = $this->validateForm($form);
+
+            $customer = CustomerQuery::create()->findPk($creditForm->get('customer_id')->getData());
+
+            $event = new CreditAccountEvent($customer, $creditForm->get('amount')->getData());
+
+            $this->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $event);
+
+            $this->redirectSuccess($form);
+        } catch(\Exception $e) {
+
+        }
     }
-}
+} 

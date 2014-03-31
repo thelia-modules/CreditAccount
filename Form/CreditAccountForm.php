@@ -21,26 +21,64 @@
 /*                                                                                   */
 /*************************************************************************************/
 
-namespace CreditAccount;
+namespace CreditAccount\Form;
 
-use Propel\Runtime\Connection\ConnectionInterface;
-use Thelia\Install\Database;
-use Thelia\Module\BaseModule;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Thelia\Core\Translation\Translator;
+use Thelia\Form\BaseForm;
 
-class CreditAccount extends BaseModule
+
+/**
+ * Class CreditAccountForm
+ * @package CreditAccount\Form
+ * @author Manuel Raynaud <mraynaud@openstudio.fr>
+ */
+class CreditAccountForm extends BaseForm
 {
-    const CREDIT_ACCOUNT_ADD_AMOUNT = 'creditAccount.addAccount';
-    /*
-     * You may now override BaseModuleInterface methods, such as:
-     * install, destroy, preActivation, postActivation, preDeactivation, postDeactivation
+
+    /**
      *
-     * Have fun !
+     * in this function you add all the fields you need for your Form.
+     * Form this you have to call add method on $this->formBuilder attribute :
+     *
+     * $this->formBuilder->add("name", "text")
+     *   ->add("email", "email", array(
+     *           "attr" => array(
+     *               "class" => "field"
+     *           ),
+     *           "label" => "email",
+     *           "constraints" => array(
+     *               new \Symfony\Component\Validator\Constraints\NotBlank()
+     *           )
+     *       )
+     *   )
+     *   ->add('age', 'integer');
+     *
+     * @return null
      */
-
-    public function postActivation(ConnectionInterface $con = null)
+    protected function buildForm()
     {
-        $database = new Database($con->getWrappedConnection());
+        $this->formBuilder
+            ->add('amount', 'number', [
+                'constraints' => [
+                    new NotBlank()
+                ],
+                'label' => Translator::getInstance()->trans('amount'),
+                'label_attr' => ['for' => 'credir_amount']
+            ])
+            ->add('customer_id', 'number', [
+                'constraints' => [
+                    new NotBlank()
+                ]
+            ])
+        ;
+    }
 
-        $database->insertSql(null, [__DIR__ . '/Config/thelia.sql']);
+    /**
+     * @return string the name of you form. This name must be unique
+     */
+    public function getName()
+    {
+        return 'credit_account';
     }
 }

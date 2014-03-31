@@ -1,0 +1,70 @@
+<div class="row">
+    <div class="col-md-12 general-block-decorator">
+        <div class="row">
+            <div class="col-md-12 title title-without-tabs">
+                {intl l="credit account for this customer"}
+            </div>
+            <div class="col-md-12 title title-without-tabs">
+                {intl l="current credit amount : "}
+                    {loop type="credit_account" name="credit_account" customer="{$customer_id}"}{$CREDIT_AMOUNT}{/loop}
+                    {elseloop rel="credit_account"}0{/elseloop}&nbsp;€
+            </div>
+            <div class="col-md-12 title title-without-tabs">
+                {intl l="credit account for this customer"}
+            </div>
+            <div class="form-container">
+                <div class="col-md-12">
+                    {form name="credit_account_form"}
+                        <form method="POST" action="{url path='/admin/creditAccount/add'}" {form_enctype form=$form} class="clearfix">
+                            {form_hidden_fields form=$form}
+
+                            <input type="hidden" name="customer_id" value="{$customer_id}" />
+
+                            {form_field form=$form field='success_url'}
+                                <input type="hidden" name="{$name}" value="{navigate to="current"}" />
+                            {/form_field}
+                            {form_field form=$form field='customer_id'}
+                                <input type="hidden" name="{$name}" value="{$customer_id}" />
+                            {/form_field}
+                            {form_field form=$form field='amount'}
+                            <label for="{$label_attr.for}" class="control-label">{$label}{if $required} <span class="required">*</span>{/if} : </label>
+                            <div class="input-group {if $error}has-error{/if}"">
+                                <input type="number" id="{$label_attr.for}" name="{$name}" class="form-control input-sm" value="{$value}" title="{$label}" placeholder="{intl l='amount'}">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-warning" type="submit">Go!</button>
+                                </span>
+                            </div><!-- /input-group -->
+                            {/form_field}
+                        </form>
+                    {/form}
+                </div>
+            </div>
+            <div class="col-md-12 title title-without-tabs">
+                {intl l="History"}
+            </div>
+            {loop type="credit_account" name="credit_account_list" customer="{$customer_id}"}
+            <div class="col-md-12">
+                <div class="table-responsive">
+                    <table class="table table-striped table-left-aligned">
+                        <thead>
+                        <tr>
+                            <th>{intl l="amount"}</th>
+                            <th>{intl l="Date & Hour"}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            {loop type="credit_account_history" name="credit_account_history" credit_account="{$ID}"}
+                                <tr>
+                                    <td>{$CREDIT_AMOUNT}&nbsp;€</td>
+                                    <td>{format_date date=$CREATE_DATE}</td>
+                                </tr>
+                            {/loop}
+                        </tbody>
+
+                    </table>
+                </div>
+            </div>
+            {/loop}
+        </div>
+    </div>
+</div>
