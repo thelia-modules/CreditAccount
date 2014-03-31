@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<database defaultIdMethod="native" name="thelia" namespace="CreditAccount\Model">
+    <table name="credit_account">
+        <column autoIncrement="true" name="id" primaryKey="true" required="true" type="INTEGER" />
+        <column name="amount" type="FLOAT" default="0"/>
+        <column name="customer_id" type="INTEGER" required="true"/>
+        <behavior name="timestampable"/>
+    </table>
+    <table name="credit_amount_history">
+        <column autoIncrement="true" name="id" primaryKey="true" required="true" type="INTEGER" />
+        <column name="credit_account_id" type="INTEGER"/>
+        <column name="amount" type="FLOAT" default="0"/>
+        <foreign-key foreignTable="credit_account" name="fk_credit_amount_history_credit_account_id" onDelete="RESTRICT" onUpdate="RESTRICT">
+            <reference foreign="id" local="credit_account_id" />
+        </foreign-key>
+        <behavior name="timestampable"/>
+    </table>
+    <external-schema filename="local/config/schema.xml" referenceOnly="true" />
+</database>
