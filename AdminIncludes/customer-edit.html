@@ -2,15 +2,15 @@
     <div class="col-md-12 general-block-decorator">
         <div class="row">
             <div class="col-md-12 title title-without-tabs">
-                {intl l="credit account for this customer"}
+                {intl d="creditaccount.ai" l="credit account for this customer"}
             </div>
             <div class="col-md-12 title title-without-tabs">
-                {intl l="current credit amount : "}
+                {intl d="creditaccount.ai" l="current credit amount : "}
                     {loop type="credit_account" name="credit_account" customer="{$customer_id}"}{$CREDIT_AMOUNT}{/loop}
                     {elseloop rel="credit_account"}0{/elseloop}&nbsp;€
             </div>
             <div class="col-md-12 title title-without-tabs">
-                {intl l="credit account for this customer"}
+                {intl d="creditaccount.ai" l="credit account for this customer"}
             </div>
             <div class="form-container">
                 <div class="col-md-12">
@@ -29,7 +29,7 @@
                             {form_field form=$form field='amount'}
                             <label for="{$label_attr.for}" class="control-label">{$label}{if $required} <span class="required">*</span>{/if} : </label>
                             <div class="input-group {if $error}has-error{/if}"">
-                                <input type="number" id="{$label_attr.for}" name="{$name}" class="form-control input-sm" value="{$value}" title="{$label}" placeholder="{intl l='amount'}">
+                                <input type="number" id="{$label_attr.for}" name="{$name}" class="form-control input-sm" value="{$value}" title="{$label}" placeholder="{intl d="creditaccount.ai" l='amount'}">
                                 <span class="input-group-btn">
                                     <button class="btn btn-warning" type="submit">Go!</button>
                                 </span>
@@ -40,7 +40,7 @@
                 </div>
             </div>
             <div class="col-md-12 title title-without-tabs">
-                {intl l="History"}
+                {intl d="creditaccount.ai" l="History"}
             </div>
             {loop type="credit_account" name="credit_account_list" customer="{$customer_id}"}
             <div class="col-md-12">
@@ -48,8 +48,8 @@
                     <table class="table table-striped table-left-aligned">
                         <thead>
                         <tr>
-                            <th>{intl l="amount"}</th>
-                            <th>{intl l="Date & Hour"}</th>
+                            <th>{intl d="creditaccount.ai" l="amount"}</th>
+                            <th>{intl d="creditaccount.ai" l="Date & Hour"}</th>
                         </tr>
                         </thead>
                         <tbody>
