@@ -113,3 +113,30 @@ retrieve the current credit account for a specified customer
 {/loop}
 ```
 
+## Listeners
+
+This module is a base for creating module like sponsorship or assets management. So some listeners are preconfigured for using it in other modules.
+
+### creditAccount.addAccount
+
+This listener is used for adding an amount to a customer's credit account. You have to dispatch a ```CreditAccount\Event\CreditAccountEvent``` class
+
+**Example**
+
+```
+//retrieve the dispatcher for using it after. I put it in $dispatcher
+
+// retrieve a customer. For the example I retrieve a random customer, obviously not do that in your application
+$customer = \Thelia\Model\CustomerQuery::create()->findOne();
+
+//the amount I want to add to the current customer's credit account
+$amount = 10;
+
+// Create the event to dispatch
+$event = new \CreditAccount\Event\CreditAccountEvent($customer, $amount)
+
+//dispatch the event
+$dispatcher->dispatch(\CreditAccount\CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $event);
+
+```
+
