@@ -76,6 +76,19 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
     protected $amount;
 
     /**
+     * The value for the who field.
+     * Note: this column has a database default value of: ''
+     * @var        string
+     */
+    protected $who;
+
+    /**
+     * The value for the order_id field.
+     * @var        int
+     */
+    protected $order_id;
+
+    /**
      * The value for the created_at field.
      * @var        string
      */
@@ -109,6 +122,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
     public function applyDefaultValues()
     {
         $this->amount = 0;
+        $this->who = '';
     }
 
     /**
@@ -405,6 +419,28 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
     }
 
     /**
+     * Get the [who] column value.
+     *
+     * @return   string
+     */
+    public function getWho()
+    {
+
+        return $this->who;
+    }
+
+    /**
+     * Get the [order_id] column value.
+     *
+     * @return   int
+     */
+    public function getOrderId()
+    {
+
+        return $this->order_id;
+    }
+
+    /**
      * Get the [optionally formatted] temporal [created_at] column value.
      *
      *
@@ -512,6 +548,48 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
     } // setAmount()
 
     /**
+     * Set the value of [who] column.
+     *
+     * @param      string $v new value
+     * @return   \CreditAccount\Model\CreditAmountHistory The current object (for fluent API support)
+     */
+    public function setWho($v)
+    {
+        if ($v !== null) {
+            $v = (string) $v;
+        }
+
+        if ($this->who !== $v) {
+            $this->who = $v;
+            $this->modifiedColumns[CreditAmountHistoryTableMap::WHO] = true;
+        }
+
+
+        return $this;
+    } // setWho()
+
+    /**
+     * Set the value of [order_id] column.
+     *
+     * @param      int $v new value
+     * @return   \CreditAccount\Model\CreditAmountHistory The current object (for fluent API support)
+     */
+    public function setOrderId($v)
+    {
+        if ($v !== null) {
+            $v = (int) $v;
+        }
+
+        if ($this->order_id !== $v) {
+            $this->order_id = $v;
+            $this->modifiedColumns[CreditAmountHistoryTableMap::ORDER_ID] = true;
+        }
+
+
+        return $this;
+    } // setOrderId()
+
+    /**
      * Sets the value of [created_at] column to a normalized version of the date/time value specified.
      *
      * @param      mixed $v string, integer (timestamp), or \DateTime value.
@@ -567,6 +645,10 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
                 return false;
             }
 
+            if ($this->who !== '') {
+                return false;
+            }
+
         // otherwise, everything was equal, so return TRUE
         return true;
     } // hasOnlyDefaultValues()
@@ -603,13 +685,19 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
             $col = $row[TableMap::TYPE_NUM == $indexType ? 2 + $startcol : CreditAmountHistoryTableMap::translateFieldName('Amount', TableMap::TYPE_PHPNAME, $indexType)];
             $this->amount = (null !== $col) ? (double) $col : null;
 
-            $col = $row[TableMap::TYPE_NUM == $indexType ? 3 + $startcol : CreditAmountHistoryTableMap::translateFieldName('CreatedAt', TableMap::TYPE_PHPNAME, $indexType)];
+            $col = $row[TableMap::TYPE_NUM == $indexType ? 3 + $startcol : CreditAmountHistoryTableMap::translateFieldName('Who', TableMap::TYPE_PHPNAME, $indexType)];
+            $this->who = (null !== $col) ? (string) $col : null;
+
+            $col = $row[TableMap::TYPE_NUM == $indexType ? 4 + $startcol : CreditAmountHistoryTableMap::translateFieldName('OrderId', TableMap::TYPE_PHPNAME, $indexType)];
+            $this->order_id = (null !== $col) ? (int) $col : null;
+
+            $col = $row[TableMap::TYPE_NUM == $indexType ? 5 + $startcol : CreditAmountHistoryTableMap::translateFieldName('CreatedAt', TableMap::TYPE_PHPNAME, $indexType)];
             if ($col === '0000-00-00 00:00:00') {
                 $col = null;
             }
             $this->created_at = (null !== $col) ? PropelDateTime::newInstance($col, null, '\DateTime') : null;
 
-            $col = $row[TableMap::TYPE_NUM == $indexType ? 4 + $startcol : CreditAmountHistoryTableMap::translateFieldName('UpdatedAt', TableMap::TYPE_PHPNAME, $indexType)];
+            $col = $row[TableMap::TYPE_NUM == $indexType ? 6 + $startcol : CreditAmountHistoryTableMap::translateFieldName('UpdatedAt', TableMap::TYPE_PHPNAME, $indexType)];
             if ($col === '0000-00-00 00:00:00') {
                 $col = null;
             }
@@ -622,7 +710,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
                 $this->ensureConsistency();
             }
 
-            return $startcol + 5; // 5 = CreditAmountHistoryTableMap::NUM_HYDRATE_COLUMNS.
+            return $startcol + 7; // 7 = CreditAmountHistoryTableMap::NUM_HYDRATE_COLUMNS.
 
         } catch (Exception $e) {
             throw new PropelException("Error populating \CreditAccount\Model\CreditAmountHistory object", 0, $e);
@@ -867,6 +955,12 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
         if ($this->isColumnModified(CreditAmountHistoryTableMap::AMOUNT)) {
             $modifiedColumns[':p' . $index++]  = 'AMOUNT';
         }
+        if ($this->isColumnModified(CreditAmountHistoryTableMap::WHO)) {
+            $modifiedColumns[':p' . $index++]  = 'WHO';
+        }
+        if ($this->isColumnModified(CreditAmountHistoryTableMap::ORDER_ID)) {
+            $modifiedColumns[':p' . $index++]  = 'ORDER_ID';
+        }
         if ($this->isColumnModified(CreditAmountHistoryTableMap::CREATED_AT)) {
             $modifiedColumns[':p' . $index++]  = 'CREATED_AT';
         }
@@ -892,6 +986,12 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
                         break;
                     case 'AMOUNT':
                         $stmt->bindValue($identifier, $this->amount, PDO::PARAM_STR);
+                        break;
+                    case 'WHO':
+                        $stmt->bindValue($identifier, $this->who, PDO::PARAM_STR);
+                        break;
+                    case 'ORDER_ID':
+                        $stmt->bindValue($identifier, $this->order_id, PDO::PARAM_INT);
                         break;
                     case 'CREATED_AT':
                         $stmt->bindValue($identifier, $this->created_at ? $this->created_at->format("Y-m-d H:i:s") : null, PDO::PARAM_STR);
@@ -971,9 +1071,15 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
                 return $this->getAmount();
                 break;
             case 3:
-                return $this->getCreatedAt();
+                return $this->getWho();
                 break;
             case 4:
+                return $this->getOrderId();
+                break;
+            case 5:
+                return $this->getCreatedAt();
+                break;
+            case 6:
                 return $this->getUpdatedAt();
                 break;
             default:
@@ -1008,8 +1114,10 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
             $keys[0] => $this->getId(),
             $keys[1] => $this->getCreditAccountId(),
             $keys[2] => $this->getAmount(),
-            $keys[3] => $this->getCreatedAt(),
-            $keys[4] => $this->getUpdatedAt(),
+            $keys[3] => $this->getWho(),
+            $keys[4] => $this->getOrderId(),
+            $keys[5] => $this->getCreatedAt(),
+            $keys[6] => $this->getUpdatedAt(),
         );
         $virtualColumns = $this->virtualColumns;
         foreach ($virtualColumns as $key => $virtualColumn) {
@@ -1064,9 +1172,15 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
                 $this->setAmount($value);
                 break;
             case 3:
-                $this->setCreatedAt($value);
+                $this->setWho($value);
                 break;
             case 4:
+                $this->setOrderId($value);
+                break;
+            case 5:
+                $this->setCreatedAt($value);
+                break;
+            case 6:
                 $this->setUpdatedAt($value);
                 break;
         } // switch()
@@ -1096,8 +1210,10 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
         if (array_key_exists($keys[0], $arr)) $this->setId($arr[$keys[0]]);
         if (array_key_exists($keys[1], $arr)) $this->setCreditAccountId($arr[$keys[1]]);
         if (array_key_exists($keys[2], $arr)) $this->setAmount($arr[$keys[2]]);
-        if (array_key_exists($keys[3], $arr)) $this->setCreatedAt($arr[$keys[3]]);
-        if (array_key_exists($keys[4], $arr)) $this->setUpdatedAt($arr[$keys[4]]);
+        if (array_key_exists($keys[3], $arr)) $this->setWho($arr[$keys[3]]);
+        if (array_key_exists($keys[4], $arr)) $this->setOrderId($arr[$keys[4]]);
+        if (array_key_exists($keys[5], $arr)) $this->setCreatedAt($arr[$keys[5]]);
+        if (array_key_exists($keys[6], $arr)) $this->setUpdatedAt($arr[$keys[6]]);
     }
 
     /**
@@ -1112,6 +1228,8 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
         if ($this->isColumnModified(CreditAmountHistoryTableMap::ID)) $criteria->add(CreditAmountHistoryTableMap::ID, $this->id);
         if ($this->isColumnModified(CreditAmountHistoryTableMap::CREDIT_ACCOUNT_ID)) $criteria->add(CreditAmountHistoryTableMap::CREDIT_ACCOUNT_ID, $this->credit_account_id);
         if ($this->isColumnModified(CreditAmountHistoryTableMap::AMOUNT)) $criteria->add(CreditAmountHistoryTableMap::AMOUNT, $this->amount);
+        if ($this->isColumnModified(CreditAmountHistoryTableMap::WHO)) $criteria->add(CreditAmountHistoryTableMap::WHO, $this->who);
+        if ($this->isColumnModified(CreditAmountHistoryTableMap::ORDER_ID)) $criteria->add(CreditAmountHistoryTableMap::ORDER_ID, $this->order_id);
         if ($this->isColumnModified(CreditAmountHistoryTableMap::CREATED_AT)) $criteria->add(CreditAmountHistoryTableMap::CREATED_AT, $this->created_at);
         if ($this->isColumnModified(CreditAmountHistoryTableMap::UPDATED_AT)) $criteria->add(CreditAmountHistoryTableMap::UPDATED_AT, $this->updated_at);
 
@@ -1179,6 +1297,8 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
     {
         $copyObj->setCreditAccountId($this->getCreditAccountId());
         $copyObj->setAmount($this->getAmount());
+        $copyObj->setWho($this->getWho());
+        $copyObj->setOrderId($this->getOrderId());
         $copyObj->setCreatedAt($this->getCreatedAt());
         $copyObj->setUpdatedAt($this->getUpdatedAt());
         if ($makeNew) {
@@ -1268,6 +1388,8 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
         $this->id = null;
         $this->credit_account_id = null;
         $this->amount = null;
+        $this->who = null;
+        $this->order_id = null;
         $this->created_at = null;
         $this->updated_at = null;
         $this->alreadyInSave = false;

@@ -1,0 +1,48 @@
+{ifloop rel="credit_account"}
+    {loop type="currency" name="amount.currency" default_only=1}
+        {$currencySymbol = $SYMBOL}
+    {/loop}
+
+    <div class="panel account-credit">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a class="accordion-toggle collapsed" data-toggle="collapse" data-parent="#account" href="#account-credit">
+                    {intl l="My credit account" d='creditaccount.fo.default'}
+                </a>
+            </h4>
+        </div>
+
+        <div id="account-credit" class="panel-collapse collapse">
+            <div class="panel-body table-responsive">
+                <table class="table" summary="{intl l="My credit account" d='creditaccount.fo.default'}">
+                    <thead>
+                    <tr>
+                        <th>{intl l="Amount" d='creditaccount.fo.default'}</th>
+                        <th>{intl l="Date" d='creditaccount.fo.default'}</th>
+                        <th>{intl l="Related order" d='creditaccount.fo.default'}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {loop type="credit_account" name="credit_account" customer={customer attr='id'}}
+                        {loop type="credit_account_history" name="credit_account_history" credit_account=$ID}
+                        <tr>
+                            <td><span {if $CREDIT_AMOUNT < 0}class="text-danger"{/if}>{format_money number=$CREDIT_AMOUNT symbol=$currencySymbol}</span></td>
+                            <td>{format_date date=$CREATE_DATE}</td>
+                            <td>
+                                {if $HAS_ORDER_ID}
+                                    {loop name="history.order" type="order" id=$ORDER_ID}
+                                        <a href="{url path="/account/order/$ID"}">{$REF}</a>
+                                    {/loop}
+                                {else}
+                                    {intl l='None' d='creditaccount.fo.default'}
+                                {/if}
+                            </td>
+                        </tr>
+                        {/loop}
+                    {/loop}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{/ifloop}

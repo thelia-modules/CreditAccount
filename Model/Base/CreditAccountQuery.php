@@ -7,6 +7,7 @@ use \PDO;
 use CreditAccount\Model\CreditAccount as ChildCreditAccount;
 use CreditAccount\Model\CreditAccountQuery as ChildCreditAccountQuery;
 use CreditAccount\Model\Map\CreditAccountTableMap;
+use CreditAccount\Model\Thelia\Model\Customer;
 use Propel\Runtime\Propel;
 use Propel\Runtime\ActiveQuery\Criteria;
 use Propel\Runtime\ActiveQuery\ModelCriteria;
@@ -36,6 +37,10 @@ use Propel\Runtime\Exception\PropelException;
  * @method     ChildCreditAccountQuery leftJoin($relation) Adds a LEFT JOIN clause to the query
  * @method     ChildCreditAccountQuery rightJoin($relation) Adds a RIGHT JOIN clause to the query
  * @method     ChildCreditAccountQuery innerJoin($relation) Adds a INNER JOIN clause to the query
+ *
+ * @method     ChildCreditAccountQuery leftJoinCustomer($relationAlias = null) Adds a LEFT JOIN clause to the query using the Customer relation
+ * @method     ChildCreditAccountQuery rightJoinCustomer($relationAlias = null) Adds a RIGHT JOIN clause to the query using the Customer relation
+ * @method     ChildCreditAccountQuery innerJoinCustomer($relationAlias = null) Adds a INNER JOIN clause to the query using the Customer relation
  *
  * @method     ChildCreditAccountQuery leftJoinCreditAmountHistory($relationAlias = null) Adds a LEFT JOIN clause to the query using the CreditAmountHistory relation
  * @method     ChildCreditAccountQuery rightJoinCreditAmountHistory($relationAlias = null) Adds a RIGHT JOIN clause to the query using the CreditAmountHistory relation
@@ -324,6 +329,8 @@ abstract class CreditAccountQuery extends ModelCriteria
      * $query->filterByCustomerId(array('min' => 12)); // WHERE customer_id > 12
      * </code>
      *
+     * @see       filterByCustomer()
+     *
      * @param     mixed $customerId The value to use as filter.
      *              Use scalar values for equality.
      *              Use array values for in_array() equivalent.
@@ -439,6 +446,81 @@ abstract class CreditAccountQuery extends ModelCriteria
         }
 
         return $this->addUsingAlias(CreditAccountTableMap::UPDATED_AT, $updatedAt, $comparison);
+    }
+
+    /**
+     * Filter the query by a related \CreditAccount\Model\Thelia\Model\Customer object
+     *
+     * @param \CreditAccount\Model\Thelia\Model\Customer|ObjectCollection $customer The related object(s) to use as filter
+     * @param string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+     *
+     * @return ChildCreditAccountQuery The current query, for fluid interface
+     */
+    public function filterByCustomer($customer, $comparison = null)
+    {
+        if ($customer instanceof \CreditAccount\Model\Thelia\Model\Customer) {
+            return $this
+                ->addUsingAlias(CreditAccountTableMap::CUSTOMER_ID, $customer->getId(), $comparison);
+        } elseif ($customer instanceof ObjectCollection) {
+            if (null === $comparison) {
+                $comparison = Criteria::IN;
+            }
+
+            return $this
+                ->addUsingAlias(CreditAccountTableMap::CUSTOMER_ID, $customer->toKeyValue('PrimaryKey', 'Id'), $comparison);
+        } else {
+            throw new PropelException('filterByCustomer() only accepts arguments of type \CreditAccount\Model\Thelia\Model\Customer or Collection');
+        }
+    }
+
+    /**
+     * Adds a JOIN clause to the query using the Customer relation
+     *
+     * @param     string $relationAlias optional alias for the relation
+     * @param     string $joinType Accepted values are null, 'left join', 'right join', 'inner join'
+     *
+     * @return ChildCreditAccountQuery The current query, for fluid interface
+     */
+    public function joinCustomer($relationAlias = null, $joinType = Criteria::INNER_JOIN)
+    {
+        $tableMap = $this->getTableMap();
+        $relationMap = $tableMap->getRelation('Customer');
+
+        // create a ModelJoin object for this join
+        $join = new ModelJoin();
+        $join->setJoinType($joinType);
+        $join->setRelationMap($relationMap, $this->useAliasInSQL ? $this->getModelAlias() : null, $relationAlias);
+        if ($previousJoin = $this->getPreviousJoin()) {
+            $join->setPreviousJoin($previousJoin);
+        }
+
+        // add the ModelJoin to the current object
+        if ($relationAlias) {
+            $this->addAlias($relationAlias, $relationMap->getRightTable()->getName());
+            $this->addJoinObject($join, $relationAlias);
+        } else {
+            $this->addJoinObject($join, 'Customer');
+        }
+
+        return $this;
+    }
+
+    /**
+     * Use the Customer relation Customer object
+     *
+     * @see useQuery()
+     *
+     * @param     string $relationAlias optional alias for the relation,
+     *                                   to be used as main alias in the secondary query
+     * @param     string $joinType Accepted values are null, 'left join', 'right join', 'inner join'
+     *
+     * @return   \CreditAccount\Model\Thelia\Model\CustomerQuery A secondary query class using the current class as primary query
+     */
+    public function useCustomerQuery($relationAlias = null, $joinType = Criteria::INNER_JOIN)
+    {
+        return $this
+            ->joinCustomer($relationAlias, $joinType)
+            ->useQuery($relationAlias ? $relationAlias : 'Customer', '\CreditAccount\Model\Thelia\Model\CustomerQuery');
     }
 
     /**

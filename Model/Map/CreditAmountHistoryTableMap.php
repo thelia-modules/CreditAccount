@@ -58,7 +58,7 @@ class CreditAmountHistoryTableMap extends TableMap
     /**
      * The total number of columns
      */
-    const NUM_COLUMNS = 5;
+    const NUM_COLUMNS = 7;
 
     /**
      * The number of lazy-loaded columns
@@ -68,7 +68,7 @@ class CreditAmountHistoryTableMap extends TableMap
     /**
      * The number of columns to hydrate (NUM_COLUMNS - NUM_LAZY_LOAD_COLUMNS)
      */
-    const NUM_HYDRATE_COLUMNS = 5;
+    const NUM_HYDRATE_COLUMNS = 7;
 
     /**
      * the column name for the ID field
@@ -84,6 +84,16 @@ class CreditAmountHistoryTableMap extends TableMap
      * the column name for the AMOUNT field
      */
     const AMOUNT = 'credit_amount_history.AMOUNT';
+
+    /**
+     * the column name for the WHO field
+     */
+    const WHO = 'credit_amount_history.WHO';
+
+    /**
+     * the column name for the ORDER_ID field
+     */
+    const ORDER_ID = 'credit_amount_history.ORDER_ID';
 
     /**
      * the column name for the CREATED_AT field
@@ -107,12 +117,12 @@ class CreditAmountHistoryTableMap extends TableMap
      * e.g. self::$fieldNames[self::TYPE_PHPNAME][0] = 'Id'
      */
     protected static $fieldNames = array (
-        self::TYPE_PHPNAME       => array('Id', 'CreditAccountId', 'Amount', 'CreatedAt', 'UpdatedAt', ),
-        self::TYPE_STUDLYPHPNAME => array('id', 'creditAccountId', 'amount', 'createdAt', 'updatedAt', ),
-        self::TYPE_COLNAME       => array(CreditAmountHistoryTableMap::ID, CreditAmountHistoryTableMap::CREDIT_ACCOUNT_ID, CreditAmountHistoryTableMap::AMOUNT, CreditAmountHistoryTableMap::CREATED_AT, CreditAmountHistoryTableMap::UPDATED_AT, ),
-        self::TYPE_RAW_COLNAME   => array('ID', 'CREDIT_ACCOUNT_ID', 'AMOUNT', 'CREATED_AT', 'UPDATED_AT', ),
-        self::TYPE_FIELDNAME     => array('id', 'credit_account_id', 'amount', 'created_at', 'updated_at', ),
-        self::TYPE_NUM           => array(0, 1, 2, 3, 4, )
+        self::TYPE_PHPNAME       => array('Id', 'CreditAccountId', 'Amount', 'Who', 'OrderId', 'CreatedAt', 'UpdatedAt', ),
+        self::TYPE_STUDLYPHPNAME => array('id', 'creditAccountId', 'amount', 'who', 'orderId', 'createdAt', 'updatedAt', ),
+        self::TYPE_COLNAME       => array(CreditAmountHistoryTableMap::ID, CreditAmountHistoryTableMap::CREDIT_ACCOUNT_ID, CreditAmountHistoryTableMap::AMOUNT, CreditAmountHistoryTableMap::WHO, CreditAmountHistoryTableMap::ORDER_ID, CreditAmountHistoryTableMap::CREATED_AT, CreditAmountHistoryTableMap::UPDATED_AT, ),
+        self::TYPE_RAW_COLNAME   => array('ID', 'CREDIT_ACCOUNT_ID', 'AMOUNT', 'WHO', 'ORDER_ID', 'CREATED_AT', 'UPDATED_AT', ),
+        self::TYPE_FIELDNAME     => array('id', 'credit_account_id', 'amount', 'who', 'order_id', 'created_at', 'updated_at', ),
+        self::TYPE_NUM           => array(0, 1, 2, 3, 4, 5, 6, )
     );
 
     /**
@@ -122,12 +132,12 @@ class CreditAmountHistoryTableMap extends TableMap
      * e.g. self::$fieldKeys[self::TYPE_PHPNAME]['Id'] = 0
      */
     protected static $fieldKeys = array (
-        self::TYPE_PHPNAME       => array('Id' => 0, 'CreditAccountId' => 1, 'Amount' => 2, 'CreatedAt' => 3, 'UpdatedAt' => 4, ),
-        self::TYPE_STUDLYPHPNAME => array('id' => 0, 'creditAccountId' => 1, 'amount' => 2, 'createdAt' => 3, 'updatedAt' => 4, ),
-        self::TYPE_COLNAME       => array(CreditAmountHistoryTableMap::ID => 0, CreditAmountHistoryTableMap::CREDIT_ACCOUNT_ID => 1, CreditAmountHistoryTableMap::AMOUNT => 2, CreditAmountHistoryTableMap::CREATED_AT => 3, CreditAmountHistoryTableMap::UPDATED_AT => 4, ),
-        self::TYPE_RAW_COLNAME   => array('ID' => 0, 'CREDIT_ACCOUNT_ID' => 1, 'AMOUNT' => 2, 'CREATED_AT' => 3, 'UPDATED_AT' => 4, ),
-        self::TYPE_FIELDNAME     => array('id' => 0, 'credit_account_id' => 1, 'amount' => 2, 'created_at' => 3, 'updated_at' => 4, ),
-        self::TYPE_NUM           => array(0, 1, 2, 3, 4, )
+        self::TYPE_PHPNAME       => array('Id' => 0, 'CreditAccountId' => 1, 'Amount' => 2, 'Who' => 3, 'OrderId' => 4, 'CreatedAt' => 5, 'UpdatedAt' => 6, ),
+        self::TYPE_STUDLYPHPNAME => array('id' => 0, 'creditAccountId' => 1, 'amount' => 2, 'who' => 3, 'orderId' => 4, 'createdAt' => 5, 'updatedAt' => 6, ),
+        self::TYPE_COLNAME       => array(CreditAmountHistoryTableMap::ID => 0, CreditAmountHistoryTableMap::CREDIT_ACCOUNT_ID => 1, CreditAmountHistoryTableMap::AMOUNT => 2, CreditAmountHistoryTableMap::WHO => 3, CreditAmountHistoryTableMap::ORDER_ID => 4, CreditAmountHistoryTableMap::CREATED_AT => 5, CreditAmountHistoryTableMap::UPDATED_AT => 6, ),
+        self::TYPE_RAW_COLNAME   => array('ID' => 0, 'CREDIT_ACCOUNT_ID' => 1, 'AMOUNT' => 2, 'WHO' => 3, 'ORDER_ID' => 4, 'CREATED_AT' => 5, 'UPDATED_AT' => 6, ),
+        self::TYPE_FIELDNAME     => array('id' => 0, 'credit_account_id' => 1, 'amount' => 2, 'who' => 3, 'order_id' => 4, 'created_at' => 5, 'updated_at' => 6, ),
+        self::TYPE_NUM           => array(0, 1, 2, 3, 4, 5, 6, )
     );
 
     /**
@@ -148,7 +158,9 @@ class CreditAmountHistoryTableMap extends TableMap
         // columns
         $this->addPrimaryKey('ID', 'Id', 'INTEGER', true, null, null);
         $this->addForeignKey('CREDIT_ACCOUNT_ID', 'CreditAccountId', 'INTEGER', 'credit_account', 'ID', false, null, null);
-        $this->addColumn('AMOUNT', 'Amount', 'FLOAT', false, null, 0);
+        $this->addColumn('AMOUNT', 'Amount', 'DOUBLE', false, null, 0);
+        $this->addColumn('WHO', 'Who', 'VARCHAR', false, 255, '');
+        $this->addColumn('ORDER_ID', 'OrderId', 'INTEGER', true, null, null);
         $this->addColumn('CREATED_AT', 'CreatedAt', 'TIMESTAMP', false, null, null);
         $this->addColumn('UPDATED_AT', 'UpdatedAt', 'TIMESTAMP', false, null, null);
     } // initialize()
@@ -158,7 +170,7 @@ class CreditAmountHistoryTableMap extends TableMap
      */
     public function buildRelations()
     {
-        $this->addRelation('CreditAccount', '\\CreditAccount\\Model\\CreditAccount', RelationMap::MANY_TO_ONE, array('credit_account_id' => 'id', ), 'RESTRICT', 'RESTRICT');
+        $this->addRelation('CreditAccount', '\\CreditAccount\\Model\\CreditAccount', RelationMap::MANY_TO_ONE, array('credit_account_id' => 'id', ), 'CASCADE', 'RESTRICT');
     } // buildRelations()
 
     /**
@@ -315,12 +327,16 @@ class CreditAmountHistoryTableMap extends TableMap
             $criteria->addSelectColumn(CreditAmountHistoryTableMap::ID);
             $criteria->addSelectColumn(CreditAmountHistoryTableMap::CREDIT_ACCOUNT_ID);
             $criteria->addSelectColumn(CreditAmountHistoryTableMap::AMOUNT);
+            $criteria->addSelectColumn(CreditAmountHistoryTableMap::WHO);
+            $criteria->addSelectColumn(CreditAmountHistoryTableMap::ORDER_ID);
             $criteria->addSelectColumn(CreditAmountHistoryTableMap::CREATED_AT);
             $criteria->addSelectColumn(CreditAmountHistoryTableMap::UPDATED_AT);
         } else {
             $criteria->addSelectColumn($alias . '.ID');
             $criteria->addSelectColumn($alias . '.CREDIT_ACCOUNT_ID');
             $criteria->addSelectColumn($alias . '.AMOUNT');
+            $criteria->addSelectColumn($alias . '.WHO');
+            $criteria->addSelectColumn($alias . '.ORDER_ID');
             $criteria->addSelectColumn($alias . '.CREATED_AT');
             $criteria->addSelectColumn($alias . '.UPDATED_AT');
         }

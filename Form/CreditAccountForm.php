@@ -12,10 +12,10 @@
 
 namespace CreditAccount\Form;
 
+use CreditAccount\CreditAccount;
+use Symfony\Component\Validator\Constraints\GreaterThan;
 use Symfony\Component\Validator\Constraints\NotBlank;
-use Thelia\Core\Translation\Translator;
 use Thelia\Form\BaseForm;
-
 
 /**
  * Class CreditAccountForm
@@ -24,42 +24,27 @@ use Thelia\Form\BaseForm;
  */
 class CreditAccountForm extends BaseForm
 {
-
-    /**
-     *
-     * in this function you add all the fields you need for your Form.
-     * Form this you have to call add method on $this->formBuilder attribute :
-     *
-     * $this->formBuilder->add("name", "text")
-     *   ->add("email", "email", array(
-     *           "attr" => array(
-     *               "class" => "field"
-     *           ),
-     *           "label" => "email",
-     *           "constraints" => array(
-     *               new \Symfony\Component\Validator\Constraints\NotBlank()
-     *           )
-     *       )
-     *   )
-     *   ->add('age', 'integer');
-     *
-     * @return null
-     */
     protected function buildForm()
     {
         $this->formBuilder
-            ->add('amount', 'number', [
-                'constraints' => [
-                    new NotBlank()
-                ],
-                'label' => Translator::getInstance()->trans('amount'),
-                'label_attr' => ['for' => 'credir_amount']
-            ])
-            ->add('customer_id', 'number', [
-                'constraints' => [
-                    new NotBlank()
+            ->add(
+                'amount',
+                'number',
+                [
+                    'constraints' => [ new NotBlank() ],
+                    'label' => $this->translator->trans('Add this amount to account', [], CreditAccount::DOMAIN),
+                    'label_attr' => [
+                        'help' => $this->translator->trans('Enter a negative number to decreate account balance.', [], CreditAccount::DOMAIN)
+                    ]
                 ]
-            ])
+            )
+            ->add(
+                'customer_id',
+                'hidden',
+                [
+                    'constraints' => [  new NotBlank(), new GreaterThan(['value' => 0]) ]
+                ]
+            )
         ;
     }
 

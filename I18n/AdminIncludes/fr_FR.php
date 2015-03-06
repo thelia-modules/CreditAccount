@@ -1,9 +1,13 @@
 <?php
 
 return array(
-    'Date & Hour' => 'Date & Heure',
+    'Current account balance: ' => 'Solde du compte',
+    'Date' => 'Date',
+    'Entry amount' => 'Montant',
     'History' => 'Historique',
-    'amount' => 'Montant',
-    'credit account for this customer' => 'Montant du compte pour ce client',
-    'current credit amount : ' => 'Montant actuel',
+    'No entry yet in this account' => 'Il n\'y a aucune écriture pour l\'instant.',
+    'None' => 'Aucune',
+    'Origin' => 'Origine',
+    'Related order' => 'Commande associée',
+    'credit account for this customer' => 'Compte de crédit',
 );

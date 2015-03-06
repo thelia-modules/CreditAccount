@@ -17,6 +17,7 @@ use CreditAccount\Form\CreditAccountForm;
 use Thelia\Controller\Admin\BaseAdminController;
 use Thelia\Core\Security\AccessManager;
 use Thelia\Core\Security\Resource\AdminResources;
+use Thelia\Model\Admin;
 use Thelia\Model\CustomerQuery;
 
 
@@ -42,11 +43,21 @@ class CreditAccountAdminController extends BaseAdminController
 
             $event = new CreditAccountEvent($customer, $creditForm->get('amount')->getData());
 
+            /** @var  Admin $admin */
+            $admin = $this->getSession()->getAdminUser();
+            $event->setWhoDidIt($admin->getFirstname() . " " . $admin->getLastname());
+
             $this->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $event);
 
-            $this->redirectSuccess($form);
-        } catch(\Exception $e) {
-
+        } catch (\Exception $ex) {
+            $this->setupFormErrorContext(
+                $this->getTranslator()->trans("Add amount to credit account"),
+                $ex->getMessage(),
+                $form,
+                $ex
+            );
         }
+
+        return $this->generateRedirect($form->getSuccessUrl());
     }
-} 
+}

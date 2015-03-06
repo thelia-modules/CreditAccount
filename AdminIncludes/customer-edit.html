@@ -1,70 +1,105 @@
-<div class="row">
+<div class="row" id="credit_account_block">
     <div class="col-md-12 general-block-decorator">
         <div class="row">
             <div class="col-md-12 title title-without-tabs">
                 {intl d="creditaccount.ai" l="credit account for this customer"}
             </div>
-            <div class="col-md-12 title title-without-tabs">
-                {intl d="creditaccount.ai" l="current credit amount : "}
-                    {loop type="credit_account" name="credit_account" customer="{$customer_id}"}{$CREDIT_AMOUNT}{/loop}
-                    {elseloop rel="credit_account"}0{/elseloop}&nbsp;€
-            </div>
-            <div class="col-md-12 title title-without-tabs">
-                {intl d="creditaccount.ai" l="credit account for this customer"}
-            </div>
-            <div class="form-container">
-                <div class="col-md-12">
-                    {form name="credit_account_form"}
-                        <form method="POST" action="{url path='/admin/creditAccount/add'}" {form_enctype form=$form} class="clearfix">
-                            {form_hidden_fields form=$form}
 
-                            <input type="hidden" name="customer_id" value="{$customer_id}" />
+            {loop type="currency" name="amount.currency" default_only=1}
+                {$currencySymbol = $SYMBOL}
+            {/loop}
 
-                            {form_field form=$form field='success_url'}
-                                <input type="hidden" name="{$name}" value="{navigate to="current"}" />
-                            {/form_field}
-                            {form_field form=$form field='customer_id'}
-                                <input type="hidden" name="{$name}" value="{$customer_id}" />
-                            {/form_field}
-                            {form_field form=$form field='amount'}
-                            <label for="{$label_attr.for}" class="control-label">{$label}{if $required} <span class="required">*</span>{/if} : </label>
-                            <div class="input-group {if $error}has-error{/if}"">
-                                <input type="number" id="{$label_attr.for}" name="{$name}" class="form-control input-sm" value="{$value}" title="{$label}" placeholder="{intl d="creditaccount.ai" l='amount'}">
+            {form name="credit_account_form"}
+                <form method="POST" action="{url path='/admin/creditAccount/add'}#credit_account_block" {form_enctype form=$form} class="clearfix">
+                    {$balance = 0}
+                    {loop type="credit_account" name="credit_account" customer="{$customer_id}"}
+                        {$balance = $CREDIT_AMOUNT }
+                    {/loop}
+
+                    {if $balance == 0}
+                        {$labelStyle = 'default'}
+                    {elseif $balance < 0}
+                        {$labelStyle = 'danger'}
+                    {else}
+                        {$labelStyle = 'success'}
+                    {/if}
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">{intl d="creditaccount.ai" l="Current account balance: "}</label>
+                            <h2 class="form-control-static" style="margin: 0; padding: 0;">
+                                <span class="label label-{$labelStyle}">{format_money number=$balance symbol=$currencySymbol}</span>
+                            </h2>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        {form_hidden_fields form=$form}
+
+                        {if ! empty($error_message)}<div class="alert alert-danger">{$error_message}</div>{/if}
+
+                        <input type="hidden" name="customer_id" value="{$customer_id}" />
+
+                        {render_form_field form=$form field='success_url' value="{navigate to="current"}"}
+                        {render_form_field form=$form field='customer_id' value="{$customer_id}"}
+
+                        {custom_render_form_field form=$form field='amount'}
+                            <div class="input-group">
+                                <input {form_field_attributes form=$form field='amount'}>
+                                <span class="input-group-addon">{$currencySymbol}</span>
                                 <span class="input-group-btn">
-                                    <button class="btn btn-warning" type="submit">Go!</button>
+                                    <button class="btn btn-primary" type="submit">Add amount</button>
                                 </span>
-                            </div><!-- /input-group -->
-                            {/form_field}
-                        </form>
-                    {/form}
-                </div>
-            </div>
+                            </div>
+                        {/custom_render_form_field}
+                    </div>
+                </form>
+            {/form}
+        </div>
+
+        {loop type="credit_account" name="credit_account_list" customer="{$customer_id}"}
             <div class="col-md-12 title title-without-tabs">
                 {intl d="creditaccount.ai" l="History"}
             </div>
-            {loop type="credit_account" name="credit_account_list" customer="{$customer_id}"}
+
             <div class="col-md-12">
                 <div class="table-responsive">
                     <table class="table table-striped table-left-aligned">
                         <thead>
                         <tr>
-                            <th>{intl d="creditaccount.ai" l="amount"}</th>
-                            <th>{intl d="creditaccount.ai" l="Date & Hour"}</th>
+                            <th>{intl d="creditaccount.ai" l="Entry amount"}</th>
+                            <th>{intl d="creditaccount.ai" l="Date"}</th>
+                            <th>{intl d="creditaccount.ai" l="Origin"}</th>
+                            <th>{intl d="creditaccount.ai" l="Related order"}</th>
                         </tr>
                         </thead>
                         <tbody>
-                            {loop type="credit_account_history" name="credit_account_history" credit_account="{$ID}"}
-                                <tr>
-                                    <td>{$CREDIT_AMOUNT}&nbsp;€</td>
-                                    <td>{format_date date=$CREATE_DATE}</td>
-                                </tr>
-                            {/loop}
+                        {loop type="credit_account_history" name="credit_account_history" credit_account="{$ID}"}
+                            <tr>
+                                <td><span {if $CREDIT_AMOUNT < 0}class="text-danger"{/if}>{format_money number=$CREDIT_AMOUNT symbol=$currencySymbol}</span></td>
+                                <td>{format_date date=$CREATE_DATE}</td>
+                                <td>{$WHO_DID_IT}</td>
+                                <td>
+                                    {$ORDER_ID}{loop name="history.order" type="order" id=$ORDER_ID backend_context=1}
+                                        <a href="{url path="/admin/order/update/$ORDER_ID"}">{$REF}</a>
+                                    {/loop}
+                                    {elseloop rel='history.order'}
+                                        {intl d="creditaccount.ai" l="None"}
+                                    {/elseloop}
+                                </td>
+                            </tr>
+                        {/loop}
+                        {elseloop rel="credit_account_history"}
+                            <tr>
+                                <td colspan="2">
+                                    <div class="alert alert-info">{intl l="No entry yet in this account" d="creditaccount.ai"}</div>
+                                </td>
+                            </tr>
+                        {/elseloop}
                         </tbody>
-
                     </table>
                 </div>
             </div>
-            {/loop}
-        </div>
+        {/loop}
     </div>
+</div>
 </div>

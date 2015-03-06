@@ -10,28 +10,30 @@
 /*      file that was distributed with this source code.                             */
 /*************************************************************************************/
 
-namespace CreditAccount;
+namespace CreditAccount\Hook;
 
-use Propel\Runtime\Connection\ConnectionInterface;
-use Thelia\Install\Database;
-use Thelia\Module\BaseModule;
+use Thelia\Core\Event\Hook\HookRenderEvent;
+use Thelia\Core\Hook\BaseHook;
 
-class CreditAccount extends BaseModule
+/**
+ * Class HookManager
+ *
+ * @package CreditAccount\Hook
+ * @author Franck Allimant <franck@cqfdev.fr>
+ */
+class HookManager extends BaseHook
 {
-    const DOMAIN = 'creditaccount';
-
-    const CREDIT_ACCOUNT_ADD_AMOUNT = 'creditAccount.addAccount';
-    /*
-     * You may now override BaseModuleInterface methods, such as:
-     * install, destroy, preActivation, postActivation, preDeactivation, postDeactivation
-     *
-     * Have fun !
-     */
-
-    public function postActivation(ConnectionInterface $con = null)
+    public function onAccountBottom(HookRenderEvent $event)
     {
-        $database = new Database($con->getWrappedConnection());
+        $event->add(
+            $this->render("credit-account-status.html")
+        );
+    }
 
-        $database->insertSql(null, [__DIR__ . '/Config/thelia.sql']);
+    public function accountUsageInOrder(HookRenderEvent $event)
+    {
+        $event->add(
+            $this->render("credit-account-usage-on-order.html", [ 'order_id' => $event->getArgument('order_id') ])
+        );
     }
 }

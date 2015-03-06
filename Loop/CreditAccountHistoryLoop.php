@@ -12,6 +12,7 @@
 
 namespace CreditAccount\Loop;
 
+use CreditAccount\Model\CreditAmountHistory;
 use CreditAccount\Model\CreditAmountHistoryQuery;
 use Propel\Runtime\ActiveQuery\Criteria;
 use Thelia\Core\Template\Element\BaseLoop;
@@ -21,7 +22,6 @@ use Thelia\Core\Template\Element\PropelSearchLoopInterface;
 use Thelia\Core\Template\Loop\Argument\Argument;
 use Thelia\Core\Template\Loop\Argument\ArgumentCollection;
 
-
 /**
  * Class CreditAccountHistoryLoop
  * @package CreditAccount\Loop
@@ -30,56 +30,25 @@ use Thelia\Core\Template\Loop\Argument\ArgumentCollection;
 class CreditAccountHistoryLoop extends BaseLoop implements PropelSearchLoopInterface
 {
     protected $timestampable = true;
-    /**
-     *
-     * define all args used in your loop
-     *
-     *
-     * example :
-     *
-     * public function getArgDefinitions()
-     * {
-     *  return new ArgumentCollection(
-     *       Argument::createIntListTypeArgument('id'),
-     *           new Argument(
-     *           'ref',
-     *           new TypeCollection(
-     *               new Type\AlphaNumStringListType()
-     *           )
-     *       ),
-     *       Argument::createIntListTypeArgument('category'),
-     *       Argument::createBooleanTypeArgument('new'),
-     *       Argument::createBooleanTypeArgument('promo'),
-     *       Argument::createFloatTypeArgument('min_price'),
-     *       Argument::createFloatTypeArgument('max_price'),
-     *       Argument::createIntTypeArgument('min_stock'),
-     *       Argument::createFloatTypeArgument('min_weight'),
-     *       Argument::createFloatTypeArgument('max_weight'),
-     *       Argument::createBooleanTypeArgument('current'),
-     *
-     *   );
-     * }
-     *
-     * @return \Thelia\Core\Template\Loop\Argument\ArgumentCollection
-     */
+
     protected function getArgDefinitions()
     {
         return new ArgumentCollection(
-            Argument::createIntTypeArgument('credit_account', null, true)
+            Argument::createIntTypeArgument('credit_account', null, true),
+            Argument::createIntTypeArgument('order')
         );
     }
 
-    /**
-     * this method returns a Propel ModelCriteria
-     *
-     * @return \Propel\Runtime\ActiveQuery\ModelCriteria
-     */
     public function buildModelCriteria()
     {
         $search = CreditAmountHistoryQuery::create()
             ->filterByCreditAccountId($this->getCreditAccount())
             ->orderByCreatedAt(Criteria::DESC)
         ;
+
+        if (null !== $orderId = $this->getOrder()) {
+            $search->filterByOrderId($orderId);
+        }
 
         return $search;
     }
@@ -91,9 +60,16 @@ class CreditAccountHistoryLoop extends BaseLoop implements PropelSearchLoopInter
      */
     public function parseResults(LoopResult $loopResult)
     {
+        /** @var CreditAmountHistory $creditAmountHistory */
         foreach ($loopResult->getResultDataCollection() as $creditAmountHistory) {
+            $orderId = $creditAmountHistory->getOrderId();
+
             $loopResultRow = (new LoopResultRow($creditAmountHistory))
-                ->set('CREDIT_AMOUNT', $creditAmountHistory->getAmount());
+                ->set('CREDIT_AMOUNT', $creditAmountHistory->getAmount())
+                ->set('WHO_DID_IT', $creditAmountHistory->getWho())
+                ->set('HAS_ORDER_ID', ! empty($orderId))
+                ->set('ORDER_ID', $creditAmountHistory->getOrderId())
+                ;
 
             $loopResult->addRow($loopResultRow);
         }
