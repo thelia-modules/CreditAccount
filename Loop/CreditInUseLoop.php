@@ -41,8 +41,8 @@ class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
             $loopResultRow = new LoopResultRow();
 
             $loopResultRow
-                ->set('ACCOUNT_USED', $this->request->getSession()->get('creditAccount.used', 0))
-                ->set('AMOUNT_USED', $this->request->getSession()->get('creditAccount.amount', 0));
+                ->set('AMOUNT_USED', $this->request->getSession()->get('creditAccount.amount', 0))
+            ;
 
             $loopResult->addRow($loopResultRow);
         }

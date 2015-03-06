@@ -9,12 +9,13 @@
         <title>Compte crédit client</title>
         <description>Compte crédit client servant de base pour la gestion de parrainage, des avois, etc</description>
     </descriptive>
-    <version>0.1</version>
+    <version>0.5</version>
     <author>
-        <name>Manuel Raynaud</name>
-        <email>manu@thelia.net</email>
+        <name>Manuel Raynaud, Franck Allimant</name>
+        <name>Open Studio, CQFDev</name>
+        <email>manu@thelia.net, franck@cqfdev.fr</email>
     </author>
     <type>classic</type>
-    <thelia>2.0.0</thelia>
-    <stability>other</stability>
+    <thelia>2.1.0</thelia>
+    <stability>beta</stability>
 </module>
