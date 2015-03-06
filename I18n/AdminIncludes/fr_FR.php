@@ -1,6 +1,7 @@
 <?php
 
 return array(
+    'Add amount' => 'Ajouter ce montant',
     'Current account balance: ' => 'Solde du compte',
     'Date' => 'Date',
     'Entry amount' => 'Montant',
