@@ -18,11 +18,11 @@
                             {$class=''}
                         {/if}
 
-                        <li>{intl l="New entry in customer credit account : <span %class>%amount</span>" class=$class amount={format_money number=$CREDIT_AMOUNT symbol=$currencySymbol} d='creditaccount.bo.default'}</li>
+                        <li>{intl l="New entry in customer credit account : <span %class>%amount</span>" class=$class amount={format_money number=$CREDIT_AMOUNT symbol=$currencySymbol}}</li>
                     {/loop}
                 {/loop}
                 {elseloop rel="order-account-order"}
-                    <li>{intl l="No new entry in customer credit account for this order." d='creditaccount.bo.default'}</li>
+                    <li>{intl l="No new entry in customer credit account for this order."}</li>
                 {/elseloop}
             {/loop}
         </ul>

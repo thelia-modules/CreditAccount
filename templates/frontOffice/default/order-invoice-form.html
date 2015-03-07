@@ -1,0 +1,21 @@
+{loop type="credit_account_usage" name="credit-used"}
+    <tr>
+        <th colspan="2" class="discount">
+            {intl l="You're using %amount from your credit account." amount={format_money number=$AMOUNT_USED symbol=$currencySymbol} d='creditaccount.fo.default'}
+            <a class="btn btn-xs btn-warning" href="{url path="/creditAccount/cancel"}">{intl l='Cancel' d='creditaccount.fo.default'}</a>
+        </th>
+    </tr>
+{/loop}
+{elseloop rel="credit-used"}
+{loop type="credit_account" name="credit_account" customer={customer attr="id"}}
+{if $CREDIT_AMOUNT > 0}
+    <tr>
+        <th colspan="2" class="discount">
+            <a class="btn btn-success" href="{url path="/creditAccount/use"}">
+                {intl l="Use my credit account (%amount available)" amount={format_money number=$CREDIT_AMOUNT symbol=$currencySymbol} d='creditaccount.fo.default'}
+            </a>
+        </th>
+    </tr>
+{/if}
+{/loop}
+{/elseloop}

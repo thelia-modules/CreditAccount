@@ -13,7 +13,14 @@
 namespace CreditAccount;
 
 use Propel\Runtime\Connection\ConnectionInterface;
+use Thelia\Core\Event\Hook\HookCreateEvent;
+use Thelia\Core\Event\Hook\ModuleHookCreateEvent;
+use Thelia\Core\Event\Hook\ModuleHookToggleActivationEvent;
+use Thelia\Core\Event\TheliaEvents;
+use Thelia\Core\Translation\Translator;
+use Thelia\Exception\TheliaProcessException;
 use Thelia\Install\Database;
+use Thelia\Model\HookQuery;
 use Thelia\Module\BaseModule;
 
 class CreditAccount extends BaseModule
@@ -33,5 +40,50 @@ class CreditAccount extends BaseModule
         $database = new Database($con->getWrappedConnection());
 
         $database->insertSql(null, [__DIR__ . '/Config/thelia.sql']);
+
+        // Add order-invoice.before-discount hook if not already defined
+        if (null == HookQuery::create()->findOneByCode('order-invoice.before-discount')) {
+            try {
+                $hookEvent = new HookCreateEvent();
+
+                $hookEvent
+                    ->setCode('order-invoice.before-discount')
+                    ->setType('front')
+                    ->setNative(false)
+                    ->setActive(true)
+                    ->setLocale('en_US')
+                    ->setTitle("Before discount code form block");
+
+                $this->getDispatcher()->dispatch(TheliaEvents::HOOK_CREATE, $hookEvent);
+
+                if ($hookEvent->hasHook()) {
+                    // Assign module to this hook
+                    $moduleHookEvent = new ModuleHookCreateEvent();
+
+                    $moduleHookEvent
+                        ->setModuleId($this->getModuleId())
+                        ->setHookId($hookEvent->getHook()->getId())
+                        ->setClassname('CreditAccount\Hook\HookManager')
+                        ->setMethod('accountUsageInOrder');
+
+                    // Activate module hook
+                    $this->getDispatcher()->dispatch(TheliaEvents::MODULE_HOOK_CREATE, $moduleHookEvent);
+
+                    if ($moduleHookEvent->hasModuleHook()) {
+                        $event = new ModuleHookToggleActivationEvent($moduleHookEvent->getModuleHook());
+
+                        $this->getDispatcher()->dispatch(TheliaEvents::MODULE_HOOK_TOGGLE_ACTIVATION, $event);
+                    }
+                }
+            } catch (\Exception $ex) {
+                throw new TheliaProcessException(
+                    Translator::getInstance()->trans(
+                        "Failed to put module in 'order-invoice.before-discount' hook (%err)",
+                        ['%err' => $ex->getMessage()]
+                    ),
+                    $ex
+                );
+            }
+        }
     }
 }

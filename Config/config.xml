@@ -21,6 +21,10 @@
         <hook id="creditaccount.order.hook" class="CreditAccount\Hook\HookManager" scope="request">
             <tag name="hook.event_listener" event="order-edit.after-order-product-list" type="back" method="accountUsageInOrder" />
         </hook>
+
+        <hook id="creditaccount.order_invoice.hook" class="CreditAccount\Hook\HookManager" scope="request">
+            <tag name="hook.event_listener" event="order-invoice.before-discount" type="front" method="orderInvoiceForm" />
+        </hook>
     </hooks>
 
     <services>

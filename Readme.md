@@ -31,43 +31,24 @@ To cancel the use of credit account, use the ```/creditAccount/cancel``` route.
 
 Invoking these routes will redirect the customer to the ```order.invoice``` route.
 
-### Exemple code to insert in the `order-invoice.html` file in your template:
+The module creates a hook, `order-invoice.before-discount`, where the code which allows your customer to use their credit is inserted.
+You have to put the hook in the `order-invoice.html` template file, just before the "Discount" block for example. 
 
-Put this block before the "Discount" block :
+### Code to insert in the `order-invoice.html` file in your template:
 
 ```smarty
-{loop type="credit_account_usage" name="credit-used"}
-<tr>
-    <th colspan="2" class="discount">
-        {intl l="You're using %amount from your credit account." amount={format_money number=$AMOUNT_USED symbol=$currencySymbol}}
-        <a class="btn btn-xs btn-warning" href="{url path="/creditAccount/cancel"}">{intl l='Cancel'}</a>
-    </th>
-</tr>
-{/loop}
-    
-{elseloop rel="credit-used"}
-    {loop type="credit_account" name="credit_account" customer={customer attr="id"}}
-        {if $CREDIT_AMOUNT > 0}
-            <tr>
-                <th colspan="2" class="discount">
-                    <a class="btn btn-success" href="{url path="/creditAccount/use"}">
-                        {intl l="Use my credit account (%amount available)" amount={format_money number=$CREDIT_AMOUNT symbol=$currencySymbol}}
-                    </a>
-                </th>
-            </tr>
-        {/if}
-    {/loop}
-{/elseloop}
+{hook name='order-invoice.before-discount'}
 ```
 
 ### Hooks
 
 The module uses the front office `account.bottom` hook to display account history in the customer "My Account" page.
 
-Ii also uses the `following back-office hooks 
+It also uses the `following back-office hooks 
 - `account.bottom` to display customer account history in customer details.
 - `order-edit.after-order-product-list` to display in order detail the entries added to a credit account by the order.
 
+It creates a `order-invoice.before-discount` which has to be inserted in the `order-invoice.html` template file.
 
 ## Loops
 
@@ -218,34 +199,15 @@ Trois boucles sont disponibles pour ce module: une pour l'historique du compte c
 
 Pour permettre au client d'utiliser son crédit, il suffit d'appeler la route ```/creditAccount/use```. Le contrôleur trouvera lui-même le crédit du client en question, et l'ajoutera dans le montant de la réduction. Pour annuler l'utilisation du crédit, utiliser la route ```/creditAccount/cancel```
 
+Ce module crée un nouveau point d'accroche, `order-invoice.before-discount`, où le code qui permet à vos clients d'utiliser leur crédit fidélité sera inséré.
+Placez le code de ce point d'accorche dans le fichier `order-invoice.html` de votre template, juste avant le bloc Remise par exemple.
 
-### Example de code à insérer dans le fichier `order-invoice.html` de votre template:
+### Code to insert in the `order-invoice.html` file in your template:
 
-Ajoutez le code ci-après juste avant le bloc Remise:
+### Code du point d'accorche à insérer dans le fichier `order-invoice.html` de votre template:
 
 ```smarty
-{loop type="credit_account_usage" name="credit-used"}
-<tr>
-    <th colspan="2" class="discount">
-        {intl l="You're using %amount from your credit account." amount={format_money number=$AMOUNT_USED symbol=$currencySymbol}}
-        <a class="btn btn-xs btn-warning" href="{url path="/creditAccount/cancel"}">{intl l='Cancel'}</a>
-    </th>
-</tr>
-{/loop}
-    
-{elseloop rel="credit-used"}
-    {loop type="credit_account" name="credit_account" customer={customer attr="id"}}
-        {if $CREDIT_AMOUNT > 0}
-            <tr>
-                <th colspan="2" class="discount">
-                    <a class="btn btn-success" href="{url path="/creditAccount/use"}">
-                        {intl l="Use my credit account (%amount available)" amount={format_money number=$CREDIT_AMOUNT symbol=$currencySymbol}}
-                    </a>
-                </th>
-            </tr>
-        {/if}
-    {/loop}
-{/elseloop}
+{hook name='order-invoice.before-discount'}
 ```
 
 ## Boucles
