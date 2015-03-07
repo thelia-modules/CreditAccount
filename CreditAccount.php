@@ -17,6 +17,7 @@ use Thelia\Core\Event\Hook\HookCreateEvent;
 use Thelia\Core\Event\Hook\ModuleHookCreateEvent;
 use Thelia\Core\Event\Hook\ModuleHookToggleActivationEvent;
 use Thelia\Core\Event\TheliaEvents;
+use Thelia\Core\Template\TemplateDefinition;
 use Thelia\Core\Translation\Translator;
 use Thelia\Exception\TheliaProcessException;
 use Thelia\Install\Database;
@@ -28,12 +29,6 @@ class CreditAccount extends BaseModule
     const DOMAIN = 'creditaccount';
 
     const CREDIT_ACCOUNT_ADD_AMOUNT = 'creditAccount.addAccount';
-    /*
-     * You may now override BaseModuleInterface methods, such as:
-     * install, destroy, preActivation, postActivation, preDeactivation, postDeactivation
-     *
-     * Have fun !
-     */
 
     public function postActivation(ConnectionInterface $con = null)
     {
@@ -42,13 +37,13 @@ class CreditAccount extends BaseModule
         $database->insertSql(null, [__DIR__ . '/Config/thelia.sql']);
 
         // Add order-invoice.before-discount hook if not already defined
-        if (null == HookQuery::create()->findOneByCode('order-invoice.before-discount')) {
+        if (null === HookQuery::create()->findOneByCode('order-invoice.before-discount')) {
             try {
                 $hookEvent = new HookCreateEvent();
 
                 $hookEvent
                     ->setCode('order-invoice.before-discount')
-                    ->setType('front')
+                    ->setType(TemplateDefinition::FRONT_OFFICE)
                     ->setNative(false)
                     ->setActive(true)
                     ->setLocale('en_US')
@@ -63,8 +58,8 @@ class CreditAccount extends BaseModule
                     $moduleHookEvent
                         ->setModuleId($this->getModuleId())
                         ->setHookId($hookEvent->getHook()->getId())
-                        ->setClassname('CreditAccount\Hook\HookManager')
-                        ->setMethod('accountUsageInOrder');
+                        ->setClassname('creditaccount.order_invoice.hook')
+                        ->setMethod('orderInvoiceForm');
 
                     // Activate module hook
                     $this->getDispatcher()->dispatch(TheliaEvents::MODULE_HOOK_CREATE, $moduleHookEvent);

@@ -36,4 +36,11 @@ class HookManager extends BaseHook
             $this->render("credit-account-usage-on-order.html", [ 'order_id' => $event->getArgument('order_id') ])
         );
     }
+
+    public function orderInvoiceForm(HookRenderEvent $event)
+    {
+        $event->add(
+            $this->render("order-invoice-form.html")
+        );
+    }
 }
