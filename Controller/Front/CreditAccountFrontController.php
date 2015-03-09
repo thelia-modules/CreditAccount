@@ -62,7 +62,8 @@ class CreditAccountFrontController extends BaseFrontController
             $order = $this->getSession()->getOrder();
             $taxCountry = $this->container->get('thelia.taxEngine')->getDeliveryCountry();
 
-            $total = $cart->getTaxedAmount($taxCountry) + $order->getPostage();
+            $total = $cart->getTaxedAmount($taxCountry);
+
             $totalDiscount = $creditAccount->getAmount();
 
             if ($totalDiscount > $total) {
