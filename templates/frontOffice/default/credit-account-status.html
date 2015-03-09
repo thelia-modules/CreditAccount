@@ -3,11 +3,12 @@
         {$currencySymbol = $SYMBOL}
     {/loop}
 
+    {loop type="credit_account" name="credit_account" customer={customer attr='id'}}
     <div class="panel account-credit">
         <div class="panel-heading">
             <h4 class="panel-title">
                 <a class="accordion-toggle collapsed" data-toggle="collapse" data-parent="#account" href="#account-credit">
-                    {intl l="My credit account" d='creditaccount.fo.default'}
+                    {intl l="My credit account (balance: %balance)" balance={format_money number=$CREDIT_AMOUNT symbol=$currencySymbol} d='creditaccount.fo.default'}
                 </a>
             </h4>
         </div>
@@ -23,7 +24,6 @@
                     </tr>
                     </thead>
                     <tbody>
-                    {loop type="credit_account" name="credit_account" customer={customer attr='id'}}
                         {loop type="credit_account_history" name="credit_account_history" credit_account=$ID}
                         <tr>
                             <td><span {if $CREDIT_AMOUNT < 0}class="text-danger"{/if}>{format_money number=$CREDIT_AMOUNT symbol=$currencySymbol}</span></td>
@@ -39,10 +39,10 @@
                             </td>
                         </tr>
                         {/loop}
-                    {/loop}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+    {/loop}
 {/ifloop}

@@ -5,6 +5,7 @@ return array(
     'Cancel' => 'Cancel',
     'Date' => 'Date',
     'My credit account' => 'My credit account',
+    'My credit account (balance: %balance)' => 'My credit account (balance: %balance)',
     'None' => 'None',
     'Related order' => 'Related order',
     'Use my credit account (%amount available)' => 'Use my credit account (%amount available)',
