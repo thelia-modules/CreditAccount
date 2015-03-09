@@ -73,7 +73,7 @@ class CreditEventListener implements EventSubscriberInterface
             $customer = $event->getOrder()->getCustomer();
             $amount = $session->get('creditAccount.amount');
 
-            $creditEvent = new CreditAccountEvent($customer, ($amount*-1));
+            $creditEvent = new CreditAccountEvent($customer, ($amount*-1), $event->getOrder()->getId());
 
             $creditEvent
                 ->setWhoDidIt(Translator::getInstance()->trans('Customer', [], CreditAccount::DOMAIN))
