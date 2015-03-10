@@ -14,6 +14,7 @@ namespace CreditAccount\Loop;
 
 use CreditAccount\Model\CreditAccount;
 use CreditAccount\Model\CreditAccountQuery;
+use Thelia\Core\Template\Element\ArraySearchLoopInterface;
 use Thelia\Core\Template\Element\BaseLoop;
 use Thelia\Core\Template\Element\LoopResult;
 use Thelia\Core\Template\Element\LoopResultRow;
@@ -23,41 +24,25 @@ use Thelia\Core\Template\Loop\Argument\ArgumentCollection;
 
 
 /**
- * Class CreditAccountLoop
+ * Class CreditInUseLoop
  * @package CreditAccount\Loop
- * @author Manuel Raynaud <mraynaud@openstudio.fr>
+ * @author  Franck Allimant <franck@cqfdev.fr>
  */
-class CreditAccountLoop extends BaseLoop implements PropelSearchLoopInterface
+class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
 {
     protected function getArgDefinitions()
     {
-        return new ArgumentCollection(
-            Argument::createIntTypeArgument('customer', null)
-        );
-    }
-
-    public function buildModelCriteria()
-    {
-        $customer = $this->getCustomer();
-
-        $search = CreditAccountQuery::create();
-
-        if ($customer !== null) {
-            $search->filterByCustomerId($customer);
-        }
-
-        return $search;
+        return new ArgumentCollection();
     }
 
     public function parseResults(LoopResult $loopResult)
     {
+        if ($loopResult->getResultDataCollectionCount() > 0) {
+            $loopResultRow = new LoopResultRow();
 
-        /** @var CreditAccount $creditAccount */
-        foreach ($loopResult->getResultDataCollection() as $creditAccount) {
-            $loopResultRow = (new LoopResultRow($creditAccount))
-                ->set('ID', $creditAccount->getId())
-                ->set('CUSTOMER_ID', $creditAccount->getCustomerId())
-                ->set('CREDIT_AMOUNT', $creditAccount->getAmount());
+            $loopResultRow
+                ->set('AMOUNT_USED', $this->request->getSession()->get('creditAccount.amount', 0))
+            ;
 
             $loopResult->addRow($loopResultRow);
         }
@@ -66,4 +51,19 @@ class CreditAccountLoop extends BaseLoop implements PropelSearchLoopInterface
     }
 
 
+    /**
+     * this method returns an array
+     *
+     * @return array
+     */
+    public function buildArray()
+    {
+        if (0 != $this->request->getSession()->get('creditAccount.used', 0)) {
+            // Call parseResults once.
+            return [ 'hey ! parseResults !' ];
+        }
+
+        // Do not call parseResults.
+        return [ ];
+    }
 }

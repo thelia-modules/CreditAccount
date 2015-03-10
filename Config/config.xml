@@ -7,17 +7,25 @@
     <loops>
         <loop name="credit_account" class="CreditAccount\Loop\CreditAccountLoop" />
         <loop name="credit_account_history" class="CreditAccount\Loop\CreditAccountHistoryLoop" />
+        <loop name="credit_account_usage" class="CreditAccount\Loop\CreditInUseLoop" />
     </loops>
 
     <forms>
         <form name="credit_account_form" class="CreditAccount\Form\CreditAccountForm" />
     </forms>
 
-    <commands>
-        <!--
-        <command class="MyModule\Command\MySuperCommand" />
-        -->
-    </commands>
+    <hooks>
+        <hook id="creditaccount.customer.hook" class="CreditAccount\Hook\HookManager" scope="request">
+            <tag name="hook.event_listener" event="account.bottom" type="front" method="onAccountBottom" />
+        </hook>
+        <hook id="creditaccount.order.hook" class="CreditAccount\Hook\HookManager" scope="request">
+            <tag name="hook.event_listener" event="order-edit.after-order-product-list" type="back" method="accountUsageInOrder" />
+        </hook>
+
+        <hook id="creditaccount.order_invoice.hook" class="CreditAccount\Hook\HookManager" scope="request">
+            <tag name="hook.event_listener" event="order-invoice.before-discount" type="front" method="orderInvoiceForm" />
+        </hook>
+    </hooks>
 
     <services>
         <service id="creditAccount_listener" class="CreditAccount\EventListeners\CreditEventListener" scope="request">

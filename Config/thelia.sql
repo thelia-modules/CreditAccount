@@ -7,25 +7,37 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- credit_account
 -- ---------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS `credit_account`
+DROP TABLE IF EXISTS `credit_account`;
+
+CREATE TABLE `credit_account`
 (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `amount` FLOAT DEFAULT 0,
     `customer_id` INTEGER NOT NULL,
     `created_at` DATETIME,
     `updated_at` DATETIME,
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+    INDEX `FI_credit_account_customer_id` (`customer_id`),
+    CONSTRAINT `fk_credit_account_customer_id`
+        FOREIGN KEY (`customer_id`)
+        REFERENCES `customer` (`id`)
+        ON UPDATE RESTRICT
+        ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
 -- credit_amount_history
 -- ---------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS `credit_amount_history`
+DROP TABLE IF EXISTS `credit_amount_history`;
+
+CREATE TABLE `credit_amount_history`
 (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `credit_account_id` INTEGER,
-    `amount` FLOAT DEFAULT 0,
+    `amount` DOUBLE DEFAULT 0,
+    `who` VARCHAR(255) DEFAULT '',
+    `order_id` INTEGER NOT NULL,
     `created_at` DATETIME,
     `updated_at` DATETIME,
     PRIMARY KEY (`id`),
@@ -34,7 +46,7 @@ CREATE TABLE IF NOT EXISTS `credit_amount_history`
         FOREIGN KEY (`credit_account_id`)
         REFERENCES `credit_account` (`id`)
         ON UPDATE RESTRICT
-        ON DELETE RESTRICT
+        ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 # This restores the fkey checks, after having unset them earlier

@@ -4,35 +4,16 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
 
-    <!--
-
-    if a /admin/module/creditaccount/ route is provided, a "Configuration" button will be displayed
-    for the module in the module list. Clicking this button will invoke this route.
-
-    <route id="my_route_id" path="/admin/module/creditaccount">
-        <default key="_controller">CreditAccount\Full\Class\Name\Of\YourConfigurationController::methodName</default>
-    </route>
-
-    <route id="my_route_id" path="/admin/module/creditaccount/route-name">
-        <default key="_controller">CreditAccount\Full\Class\Name\Of\YourAdminController::methodName</default>
-    </route>
-
-    <route id="my_route_id" path="/my/route/name">
-        <default key="_controller">CreditAccount\Full\Class\Name\Of\YourOtherController::methodName</default>
-    </route>
-
-    ...add as many routes as required.
-
-    <route>
-    ...
-    </route>
-    -->
     <route id="creditAccount.addAmount" path="/admin/creditAccount/add">
         <default key="_controller">CreditAccount\Controller\Admin\CreditAccountAdminController::addAmount</default>
     </route>
 
     <route id="creditAccount.useAmount" path="creditAccount/use">
         <default key="_controller">CreditAccount\Controller\Front\CreditAccountFrontController::useAmount</default>
+    </route>
+
+    <route id="creditAccount.cancelUsage" path="creditAccount/cancel">
+        <default key="_controller">CreditAccount\Controller\Front\CreditAccountFrontController::cancelUsage</default>
     </route>
 
 </routes>

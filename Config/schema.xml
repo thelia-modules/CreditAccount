@@ -4,13 +4,18 @@
         <column autoIncrement="true" name="id" primaryKey="true" required="true" type="INTEGER" />
         <column name="amount" type="FLOAT" default="0"/>
         <column name="customer_id" type="INTEGER" required="true"/>
+        <foreign-key foreignTable="customer" name="fk_credit_account_customer_id" onDelete="CASCADE" onUpdate="RESTRICT">
+            <reference foreign="id" local="customer_id" />
+        </foreign-key>
         <behavior name="timestampable"/>
     </table>
     <table name="credit_amount_history">
         <column autoIncrement="true" name="id" primaryKey="true" required="true" type="INTEGER" />
         <column name="credit_account_id" type="INTEGER"/>
-        <column name="amount" type="FLOAT" default="0"/>
-        <foreign-key foreignTable="credit_account" name="fk_credit_amount_history_credit_account_id" onDelete="RESTRICT" onUpdate="RESTRICT">
+        <column name="amount" type="double" default="0"/>
+        <column name="who" size="255" type="VARCHAR" default=""/>
+        <column name="order_id" type="INTEGER" required="true"/>
+        <foreign-key foreignTable="credit_account" name="fk_credit_amount_history_credit_account_id" onDelete="CASCADE" onUpdate="RESTRICT">
             <reference foreign="id" local="credit_account_id" />
         </foreign-key>
         <behavior name="timestampable"/>

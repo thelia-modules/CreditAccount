@@ -15,7 +15,6 @@ namespace CreditAccount\Controller\Front;
 use CreditAccount\Model\CreditAccountQuery;
 use Thelia\Controller\Front\BaseFrontController;
 
-
 /**
  * Class CreditAccountFrontController
  * @package CreditAccount\Controller\Front
@@ -23,6 +22,31 @@ use Thelia\Controller\Front\BaseFrontController;
  */
 class CreditAccountFrontController extends BaseFrontController
 {
+    public function cancelUsage()
+    {
+        $this->checkAuth();
+
+        if (0 !== $this->getSession()->get('creditAccount.used', 0)) {
+            $usedAmount = $this->getSession()->get('creditAccount.amount', 0);
+
+            if ($usedAmount > 0) {
+                $cart = $this->getSession()->getSessionCart($this->getDispatcher());
+                $order = $this->getSession()->getOrder();
+
+                $order->setDiscount($order->getDiscount() - $usedAmount);
+
+                $cart
+                    ->setDiscount($cart->getDiscount() - $usedAmount)
+                    ->save();
+
+                $this->getSession()->set('creditAccount.used', 0);
+                $this->getSession()->set('creditAccount.amount', 0);
+            }
+        }
+
+        return $this->generateRedirectFromRoute('order.invoice');
+    }
+
     public function useAmount()
     {
         $this->checkAuth();
@@ -34,11 +58,12 @@ class CreditAccountFrontController extends BaseFrontController
             ->findOneByCustomerId($customer->getId());
 
         if ($creditAccount->getAmount() > 0) {
-            $cart = $this->getSession()->getCart();
+            $cart = $this->getSession()->getSessionCart($this->getDispatcher());
             $order = $this->getSession()->getOrder();
             $taxCountry = $this->container->get('thelia.taxEngine')->getDeliveryCountry();
 
-            $total = $cart->getTaxedAmount($taxCountry) + $order->getPostage();
+            $total = $cart->getTaxedAmount($taxCountry);
+
             $totalDiscount = $creditAccount->getAmount();
 
             if ($totalDiscount > $total) {
@@ -52,12 +77,10 @@ class CreditAccountFrontController extends BaseFrontController
                 ->setDiscount($cart->getDiscount() + $totalDiscount)
                 ->save();
 
-            $this->getSession()->setOrder($order);
             $this->getSession()->set('creditAccount.used', 1);
             $this->getSession()->set('creditAccount.amount', $totalDiscount);
-
         }
 
-        $this->redirectToRoute('order.invoice');
+        return $this->generateRedirectFromRoute('order.invoice');
     }
-} 
+}

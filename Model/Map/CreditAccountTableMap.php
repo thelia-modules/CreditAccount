@@ -148,7 +148,7 @@ class CreditAccountTableMap extends TableMap
         // columns
         $this->addPrimaryKey('ID', 'Id', 'INTEGER', true, null, null);
         $this->addColumn('AMOUNT', 'Amount', 'FLOAT', false, null, 0);
-        $this->addColumn('CUSTOMER_ID', 'CustomerId', 'INTEGER', true, null, null);
+        $this->addForeignKey('CUSTOMER_ID', 'CustomerId', 'INTEGER', 'customer', 'ID', true, null, null);
         $this->addColumn('CREATED_AT', 'CreatedAt', 'TIMESTAMP', false, null, null);
         $this->addColumn('UPDATED_AT', 'UpdatedAt', 'TIMESTAMP', false, null, null);
     } // initialize()
@@ -158,7 +158,8 @@ class CreditAccountTableMap extends TableMap
      */
     public function buildRelations()
     {
-        $this->addRelation('CreditAmountHistory', '\\CreditAccount\\Model\\CreditAmountHistory', RelationMap::ONE_TO_MANY, array('id' => 'credit_account_id', ), 'RESTRICT', 'RESTRICT', 'CreditAmountHistories');
+        $this->addRelation('Customer', '\\CreditAccount\\Model\\Thelia\\Model\\Customer', RelationMap::MANY_TO_ONE, array('customer_id' => 'id', ), 'CASCADE', 'RESTRICT');
+        $this->addRelation('CreditAmountHistory', '\\CreditAccount\\Model\\CreditAmountHistory', RelationMap::ONE_TO_MANY, array('id' => 'credit_account_id', ), 'CASCADE', 'RESTRICT', 'CreditAmountHistories');
     } // buildRelations()
 
     /**
@@ -173,6 +174,15 @@ class CreditAccountTableMap extends TableMap
             'timestampable' => array('create_column' => 'created_at', 'update_column' => 'updated_at', ),
         );
     } // getBehaviors()
+    /**
+     * Method to invalidate the instance pool of all tables related to credit_account     * by a foreign key with ON DELETE CASCADE
+     */
+    public static function clearRelatedInstancePool()
+    {
+        // Invalidate objects in ".$this->getClassNameFromBuilder($joinedTableTableMapBuilder)." instance pool,
+        // since one or more of them may be deleted by ON DELETE CASCADE/SETNULL rule.
+                CreditAmountHistoryTableMap::clearInstancePool();
+            }
 
     /**
      * Retrieves a string version of the primary key from the DB resultset row that can be used to uniquely identify a row in this table.

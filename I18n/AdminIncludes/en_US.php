@@ -1,9 +1,19 @@
 <?php
 
 return array(
-    'Date & Hour' => 'Date & Hour',
+    'Add amount' => 'Add amount',
+    'Balance' => 'Balance',
+    'Current account balance: ' => 'Current account balance: ',
+    'Current status of credit accounts' => 'Current status of credit accounts',
+    'Customer' => 'Customer',
+    'Date' => 'Date',
+    'Entry amount' => 'Entry amount',
     'History' => 'History',
-    'amount' => 'amount',
-    'credit account for this customer' => 'credit account for this customer',
-    'current credit amount : ' => 'current credit amount : ',
+    'No credit account exists yet.' => 'No credit account exists yet.',
+    'No entry yet in this account' => 'No entry yet in this account',
+    'None' => 'None',
+    'Origin' => 'Origin',
+    'Related order' => 'Related order',
+    'View details' => 'View details',
+    'credit account for this customer' => 'Credit account',
 );

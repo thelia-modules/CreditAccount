@@ -1,9 +1,19 @@
 <?php
 
 return array(
-    'Date & Hour' => 'Date & Heure',
+    'Add amount' => 'Ajouter ce montant',
+    'Balance' => 'Solde',
+    'Current account balance: ' => 'Solde du compte',
+    'Current status of credit accounts' => 'Solde ces comptes existants',
+    'Customer' => 'Client',
+    'Date' => 'Date',
+    'Entry amount' => 'Montant',
     'History' => 'Historique',
-    'amount' => 'Montant',
-    'credit account for this customer' => 'Montant du compte pour ce client',
-    'current credit amount : ' => 'Montant actuel',
+    'No credit account exists yet.' => 'Aucune compte n\'existe actuellement.',
+    'No entry yet in this account' => 'Il n\'y a aucune écriture pour l\'instant.',
+    'None' => 'Aucune',
+    'Origin' => 'Origine',
+    'Related order' => 'Commande associée',
+    'View details' => 'Afficher les détails',
+    'credit account for this customer' => 'Compte de crédit',
 );

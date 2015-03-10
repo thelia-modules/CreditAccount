@@ -10,6 +10,8 @@ use CreditAccount\Model\CreditAccountQuery as ChildCreditAccountQuery;
 use CreditAccount\Model\CreditAmountHistory as ChildCreditAmountHistory;
 use CreditAccount\Model\CreditAmountHistoryQuery as ChildCreditAmountHistoryQuery;
 use CreditAccount\Model\Map\CreditAccountTableMap;
+use CreditAccount\Model\Thelia\Model\Customer as ChildCustomer;
+use CreditAccount\Model\Thelia\Model\CustomerQuery;
 use Propel\Runtime\Propel;
 use Propel\Runtime\ActiveQuery\Criteria;
 use Propel\Runtime\ActiveQuery\ModelCriteria;
@@ -87,6 +89,11 @@ abstract class CreditAccount implements ActiveRecordInterface
      * @var        string
      */
     protected $updated_at;
+
+    /**
+     * @var        Customer
+     */
+    protected $aCustomer;
 
     /**
      * @var        ObjectCollection|ChildCreditAmountHistory[] Collection to store aggregation of ChildCreditAmountHistory objects.
@@ -511,6 +518,10 @@ abstract class CreditAccount implements ActiveRecordInterface
             $this->modifiedColumns[CreditAccountTableMap::CUSTOMER_ID] = true;
         }
 
+        if ($this->aCustomer !== null && $this->aCustomer->getId() !== $v) {
+            $this->aCustomer = null;
+        }
+
 
         return $this;
     } // setCustomerId()
@@ -648,6 +659,9 @@ abstract class CreditAccount implements ActiveRecordInterface
      */
     public function ensureConsistency()
     {
+        if ($this->aCustomer !== null && $this->customer_id !== $this->aCustomer->getId()) {
+            $this->aCustomer = null;
+        }
     } // ensureConsistency
 
     /**
@@ -687,6 +701,7 @@ abstract class CreditAccount implements ActiveRecordInterface
 
         if ($deep) {  // also de-associate any related objects?
 
+            $this->aCustomer = null;
             $this->collCreditAmountHistories = null;
 
         } // if (deep)
@@ -811,6 +826,18 @@ abstract class CreditAccount implements ActiveRecordInterface
         if (!$this->alreadyInSave) {
             $this->alreadyInSave = true;
 
+            // We call the save method on the following object(s) if they
+            // were passed to this object by their corresponding set
+            // method.  This object relates to these object(s) by a
+            // foreign key reference.
+
+            if ($this->aCustomer !== null) {
+                if ($this->aCustomer->isModified() || $this->aCustomer->isNew()) {
+                    $affectedRows += $this->aCustomer->save($con);
+                }
+                $this->setCustomer($this->aCustomer);
+            }
+
             if ($this->isNew() || $this->isModified()) {
                 // persist changes
                 if ($this->isNew()) {
@@ -824,10 +851,9 @@ abstract class CreditAccount implements ActiveRecordInterface
 
             if ($this->creditAmountHistoriesScheduledForDeletion !== null) {
                 if (!$this->creditAmountHistoriesScheduledForDeletion->isEmpty()) {
-                    foreach ($this->creditAmountHistoriesScheduledForDeletion as $creditAmountHistory) {
-                        // need to save related object because we set the relation to null
-                        $creditAmountHistory->save($con);
-                    }
+                    \CreditAccount\Model\CreditAmountHistoryQuery::create()
+                        ->filterByPrimaryKeys($this->creditAmountHistoriesScheduledForDeletion->getPrimaryKeys(false))
+                        ->delete($con);
                     $this->creditAmountHistoriesScheduledForDeletion = null;
                 }
             }
@@ -1025,6 +1051,9 @@ abstract class CreditAccount implements ActiveRecordInterface
         }
 
         if ($includeForeignObjects) {
+            if (null !== $this->aCustomer) {
+                $result['Customer'] = $this->aCustomer->toArray($keyType, $includeLazyLoadColumns,  $alreadyDumpedObjects, true);
+            }
             if (null !== $this->collCreditAmountHistories) {
                 $result['CreditAmountHistories'] = $this->collCreditAmountHistories->toArray(null, true, $keyType, $includeLazyLoadColumns, $alreadyDumpedObjects);
             }
@@ -1229,6 +1258,57 @@ abstract class CreditAccount implements ActiveRecordInterface
         $this->copyInto($copyObj, $deepCopy);
 
         return $copyObj;
+    }
+
+    /**
+     * Declares an association between this object and a ChildCustomer object.
+     *
+     * @param                  ChildCustomer $v
+     * @return                 \CreditAccount\Model\CreditAccount The current object (for fluent API support)
+     * @throws PropelException
+     */
+    public function setCustomer(ChildCustomer $v = null)
+    {
+        if ($v === null) {
+            $this->setCustomerId(NULL);
+        } else {
+            $this->setCustomerId($v->getId());
+        }
+
+        $this->aCustomer = $v;
+
+        // Add binding for other direction of this n:n relationship.
+        // If this object has already been added to the ChildCustomer object, it will not be re-added.
+        if ($v !== null) {
+            $v->addCreditAccount($this);
+        }
+
+
+        return $this;
+    }
+
+
+    /**
+     * Get the associated ChildCustomer object
+     *
+     * @param      ConnectionInterface $con Optional Connection object.
+     * @return                 ChildCustomer The associated ChildCustomer object.
+     * @throws PropelException
+     */
+    public function getCustomer(ConnectionInterface $con = null)
+    {
+        if ($this->aCustomer === null && ($this->customer_id !== null)) {
+            $this->aCustomer = CustomerQuery::create()->findPk($this->customer_id, $con);
+            /* The following can be used additionally to
+                guarantee the related object contains a reference
+                to this object.  This level of coupling may, however, be
+                undesirable since it could result in an only partially populated collection
+                in the referenced object.
+                $this->aCustomer->addCreditAccounts($this);
+             */
+        }
+
+        return $this->aCustomer;
     }
 
 
@@ -1503,6 +1583,7 @@ abstract class CreditAccount implements ActiveRecordInterface
         } // if ($deep)
 
         $this->collCreditAmountHistories = null;
+        $this->aCustomer = null;
     }
 
     /**

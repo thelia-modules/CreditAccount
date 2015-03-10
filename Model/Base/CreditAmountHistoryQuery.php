@@ -24,12 +24,16 @@ use Propel\Runtime\Exception\PropelException;
  * @method     ChildCreditAmountHistoryQuery orderById($order = Criteria::ASC) Order by the id column
  * @method     ChildCreditAmountHistoryQuery orderByCreditAccountId($order = Criteria::ASC) Order by the credit_account_id column
  * @method     ChildCreditAmountHistoryQuery orderByAmount($order = Criteria::ASC) Order by the amount column
+ * @method     ChildCreditAmountHistoryQuery orderByWho($order = Criteria::ASC) Order by the who column
+ * @method     ChildCreditAmountHistoryQuery orderByOrderId($order = Criteria::ASC) Order by the order_id column
  * @method     ChildCreditAmountHistoryQuery orderByCreatedAt($order = Criteria::ASC) Order by the created_at column
  * @method     ChildCreditAmountHistoryQuery orderByUpdatedAt($order = Criteria::ASC) Order by the updated_at column
  *
  * @method     ChildCreditAmountHistoryQuery groupById() Group by the id column
  * @method     ChildCreditAmountHistoryQuery groupByCreditAccountId() Group by the credit_account_id column
  * @method     ChildCreditAmountHistoryQuery groupByAmount() Group by the amount column
+ * @method     ChildCreditAmountHistoryQuery groupByWho() Group by the who column
+ * @method     ChildCreditAmountHistoryQuery groupByOrderId() Group by the order_id column
  * @method     ChildCreditAmountHistoryQuery groupByCreatedAt() Group by the created_at column
  * @method     ChildCreditAmountHistoryQuery groupByUpdatedAt() Group by the updated_at column
  *
@@ -47,12 +51,16 @@ use Propel\Runtime\Exception\PropelException;
  * @method     ChildCreditAmountHistory findOneById(int $id) Return the first ChildCreditAmountHistory filtered by the id column
  * @method     ChildCreditAmountHistory findOneByCreditAccountId(int $credit_account_id) Return the first ChildCreditAmountHistory filtered by the credit_account_id column
  * @method     ChildCreditAmountHistory findOneByAmount(double $amount) Return the first ChildCreditAmountHistory filtered by the amount column
+ * @method     ChildCreditAmountHistory findOneByWho(string $who) Return the first ChildCreditAmountHistory filtered by the who column
+ * @method     ChildCreditAmountHistory findOneByOrderId(int $order_id) Return the first ChildCreditAmountHistory filtered by the order_id column
  * @method     ChildCreditAmountHistory findOneByCreatedAt(string $created_at) Return the first ChildCreditAmountHistory filtered by the created_at column
  * @method     ChildCreditAmountHistory findOneByUpdatedAt(string $updated_at) Return the first ChildCreditAmountHistory filtered by the updated_at column
  *
  * @method     array findById(int $id) Return ChildCreditAmountHistory objects filtered by the id column
  * @method     array findByCreditAccountId(int $credit_account_id) Return ChildCreditAmountHistory objects filtered by the credit_account_id column
  * @method     array findByAmount(double $amount) Return ChildCreditAmountHistory objects filtered by the amount column
+ * @method     array findByWho(string $who) Return ChildCreditAmountHistory objects filtered by the who column
+ * @method     array findByOrderId(int $order_id) Return ChildCreditAmountHistory objects filtered by the order_id column
  * @method     array findByCreatedAt(string $created_at) Return ChildCreditAmountHistory objects filtered by the created_at column
  * @method     array findByUpdatedAt(string $updated_at) Return ChildCreditAmountHistory objects filtered by the updated_at column
  *
@@ -143,7 +151,7 @@ abstract class CreditAmountHistoryQuery extends ModelCriteria
      */
     protected function findPkSimple($key, $con)
     {
-        $sql = 'SELECT ID, CREDIT_ACCOUNT_ID, AMOUNT, CREATED_AT, UPDATED_AT FROM credit_amount_history WHERE ID = :p0';
+        $sql = 'SELECT ID, CREDIT_ACCOUNT_ID, AMOUNT, WHO, ORDER_ID, CREATED_AT, UPDATED_AT FROM credit_amount_history WHERE ID = :p0';
         try {
             $stmt = $con->prepare($sql);
             $stmt->bindValue(':p0', $key, PDO::PARAM_INT);
@@ -355,6 +363,76 @@ abstract class CreditAmountHistoryQuery extends ModelCriteria
         }
 
         return $this->addUsingAlias(CreditAmountHistoryTableMap::AMOUNT, $amount, $comparison);
+    }
+
+    /**
+     * Filter the query on the who column
+     *
+     * Example usage:
+     * <code>
+     * $query->filterByWho('fooValue');   // WHERE who = 'fooValue'
+     * $query->filterByWho('%fooValue%'); // WHERE who LIKE '%fooValue%'
+     * </code>
+     *
+     * @param     string $who The value to use as filter.
+     *              Accepts wildcards (* and % trigger a LIKE)
+     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+     *
+     * @return ChildCreditAmountHistoryQuery The current query, for fluid interface
+     */
+    public function filterByWho($who = null, $comparison = null)
+    {
+        if (null === $comparison) {
+            if (is_array($who)) {
+                $comparison = Criteria::IN;
+            } elseif (preg_match('/[\%\*]/', $who)) {
+                $who = str_replace('*', '%', $who);
+                $comparison = Criteria::LIKE;
+            }
+        }
+
+        return $this->addUsingAlias(CreditAmountHistoryTableMap::WHO, $who, $comparison);
+    }
+
+    /**
+     * Filter the query on the order_id column
+     *
+     * Example usage:
+     * <code>
+     * $query->filterByOrderId(1234); // WHERE order_id = 1234
+     * $query->filterByOrderId(array(12, 34)); // WHERE order_id IN (12, 34)
+     * $query->filterByOrderId(array('min' => 12)); // WHERE order_id > 12
+     * </code>
+     *
+     * @param     mixed $orderId The value to use as filter.
+     *              Use scalar values for equality.
+     *              Use array values for in_array() equivalent.
+     *              Use associative array('min' => $minValue, 'max' => $maxValue) for intervals.
+     * @param     string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+     *
+     * @return ChildCreditAmountHistoryQuery The current query, for fluid interface
+     */
+    public function filterByOrderId($orderId = null, $comparison = null)
+    {
+        if (is_array($orderId)) {
+            $useMinMax = false;
+            if (isset($orderId['min'])) {
+                $this->addUsingAlias(CreditAmountHistoryTableMap::ORDER_ID, $orderId['min'], Criteria::GREATER_EQUAL);
+                $useMinMax = true;
+            }
+            if (isset($orderId['max'])) {
+                $this->addUsingAlias(CreditAmountHistoryTableMap::ORDER_ID, $orderId['max'], Criteria::LESS_EQUAL);
+                $useMinMax = true;
+            }
+            if ($useMinMax) {
+                return $this;
+            }
+            if (null === $comparison) {
+                $comparison = Criteria::IN;
+            }
+        }
+
+        return $this->addUsingAlias(CreditAmountHistoryTableMap::ORDER_ID, $orderId, $comparison);
     }
 
     /**
