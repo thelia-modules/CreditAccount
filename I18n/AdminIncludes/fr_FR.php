@@ -4,7 +4,7 @@ return array(
     'Add amount' => 'Ajouter ce montant',
     'Balance' => 'Solde',
     'Current account balance: ' => 'Solde du compte',
-    'Current status of credit accounts' => 'Solde ces comptes existants',
+    'Current status of credit accounts' => 'Solde des comptes existants',
     'Customer' => 'Client',
     'Date' => 'Date',
     'Entry amount' => 'Montant',
