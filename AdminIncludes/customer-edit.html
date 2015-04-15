@@ -79,7 +79,7 @@
                                 <td>{format_date date=$CREATE_DATE}</td>
                                 <td>{$WHO_DID_IT}</td>
                                 <td>
-                                    {loop name="history.order" type="order" id=$ORDER_ID backend_context=1}
+                                    {loop name="history.order" type="order" customer="*" id=$ORDER_ID backend_context=1}
                                         <a href="{url path="/admin/order/update/$ORDER_ID"}">{$REF}</a>
                                     {/loop}
                                     {elseloop rel='history.order'}
