@@ -10,4 +10,5 @@ return array(
     'Related order' => 'Commande associée',
     'Use my credit account (%amount available)' => 'Utiliser mon crédit fidélité (%amount disponible)',
     'You\'re using %amount from your credit account.' => 'Vous utilisez %amount de votre compte de fidélité.',
+    'You can\'t use both coupon and credit' => 'Vous ne pouvez pas utiliser votre crédit et un coupon.',
 );
