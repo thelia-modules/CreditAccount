@@ -30,6 +30,7 @@
     <services>
         <service id="creditAccount_listener" class="CreditAccount\EventListeners\CreditEventListener" scope="request">
             <argument type="service" id="request"/>
+            <argument type="service" id="thelia.translator"/>
             <tag name="kernel.event_subscriber"/>
         </service>
     </services>
