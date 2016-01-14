@@ -2,7 +2,17 @@
     {$currencySymbol = $SYMBOL}
 {/loop}
 {loop type="credit_account_usage" name="credit-used"}
-    {if $AMOUNT_USED !== "coupon"}
+    {if $amountUsed === "coupon"}
+        <tr>
+            <td></td>
+            <td colspan="2" class="discount">
+                {intl l="You're using a coupon" d='creditaccount.fo.default'}
+            </td>
+            <td class="discount text-center">
+                <a href="{url path="/order/clear-coupons"}">{intl l='Cancel' d='creditaccount.fo.default'}</a>
+            </td>
+        </tr>
+    {else}
         <tr>
             <th colspan="2" class="discount">
                 {intl l="You're using %amount from your credit account." amount={format_money number=$AMOUNT_USED symbol=$currencySymbol} d='creditaccount.fo.default'}
