@@ -40,6 +40,16 @@ class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
         if ($loopResult->getResultDataCollectionCount() > 0) {
             $loopResultRow = new LoopResultRow();
 
+            $resCollection = $loopResult->getResultDataCollection();
+
+            if ($resCollection[0] === "coupon") {
+                $loopResultRow
+                    ->set('AMOUNT_USED', 'coupon')
+                ;
+                $loopResult->addRow($loopResultRow);
+                return $loopResult;
+            }
+
             $loopResultRow
                 ->set('AMOUNT_USED', $this->request->getSession()->get('creditAccount.amount', 0))
             ;
@@ -58,6 +68,10 @@ class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
      */
     public function buildArray()
     {
+        if (0 != $this->request->getSession()->get('coupon.used', 0)) {
+            return ['coupon'];
+        }
+
         if (0 != $this->request->getSession()->get('creditAccount.used', 0)) {
             // Call parseResults once.
             return [ 'hey ! parseResults !' ];
