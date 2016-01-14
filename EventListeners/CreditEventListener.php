@@ -104,8 +104,6 @@ class CreditEventListener implements EventSubscriberInterface
             $message = $this->translator->trans("You can't use both coupon and credit", array(), "creditaccount");
             throw new \Exception($message);
         }
-
-        $session->set('coupon.used', 1);
     }
 
 
