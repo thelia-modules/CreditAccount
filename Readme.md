@@ -31,15 +31,6 @@ To cancel the use of credit account, use the ```/creditAccount/cancel``` route.
 
 Invoking these routes will redirect the customer to the ```order.invoice``` route.
 
-The module creates a hook, `order-invoice.before-discount`, where the code which allows your customer to use their credit is inserted.
-You have to put the hook in the `order-invoice.html` template file, just before the "Discount" block for example. 
-
-### Code to insert in the `order-invoice.html` file in your template:
-
-```smarty
-{hook name='order-invoice.before-discount'}
-```
-
 ### Hooks
 
 The module uses the front office `account.bottom` hook to display account history in the customer "My Account" page.
@@ -201,14 +192,6 @@ Pour permettre au client d'utiliser son crédit, il suffit d'appeler la route ``
 
 Ce module crée un nouveau point d'accroche, `order-invoice.before-discount`, où le code qui permet à vos clients d'utiliser leur crédit fidélité sera inséré.
 Placez le code de ce point d'accorche dans le fichier `order-invoice.html` de votre template, juste avant le bloc Remise par exemple.
-
-### Code to insert in the `order-invoice.html` file in your template:
-
-### Code du point d'accorche à insérer dans le fichier `order-invoice.html` de votre template:
-
-```smarty
-{hook name='order-invoice.before-discount'}
-```
 
 ## Boucles
 
