@@ -7,9 +7,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- credit_account
 -- ---------------------------------------------------------------------
 
-DROP TABLE IF EXISTS `credit_account`;
-
-CREATE TABLE `credit_account`
+CREATE TABLE IF NOT EXISTS `credit_account`
 (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `amount` FLOAT DEFAULT 0,
@@ -29,9 +27,7 @@ CREATE TABLE `credit_account`
 -- credit_amount_history
 -- ---------------------------------------------------------------------
 
-DROP TABLE IF EXISTS `credit_amount_history`;
-
-CREATE TABLE `credit_amount_history`
+CREATE TABLE IF NOT EXISTS `credit_amount_history`
 (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `credit_account_id` INTEGER,
