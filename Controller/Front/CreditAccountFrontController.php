@@ -57,9 +57,10 @@ class CreditAccountFrontController extends BaseFrontController
         $creditAccount = CreditAccountQuery::create()
             ->findOneByCustomerId($customer->getId());
         $creditUsed = $this->getSession()->get('creditAccount.used');
-        $couponUsed = empty($this->getSession()->get('thelia.consumed_coupons'));
+        $couponUsed = $this->getSession()->get('thelia.consumed_coupons');
+        $couponUsedFlag = empty($couponUsed);
 
-        if ($creditAccount->getAmount() > 0 && $creditUsed !== 1 && $couponUsed !==1) {
+        if ($creditAccount->getAmount() > 0 && $creditUsed !== 1 && $couponUsedFlag !==1) {
             $cart = $this->getSession()->getSessionCart($this->getDispatcher());
             $order = $this->getSession()->getOrder();
             $taxCountry = $this->container->get('thelia.taxEngine')->getDeliveryCountry();
