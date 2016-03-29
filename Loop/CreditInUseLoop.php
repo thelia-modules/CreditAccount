@@ -68,7 +68,9 @@ class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
      */
     public function buildArray()
     {
-        if (!empty($this->request->getSession()->get('thelia.consumed_coupons'))) {
+        $couponCredit = $this->request->getSession()->get('thelia.consumed_coupons');
+        
+        if (!empty($couponCredit)) {
             return ['coupon'];
         }
 
