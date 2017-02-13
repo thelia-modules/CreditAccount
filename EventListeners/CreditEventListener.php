@@ -107,17 +107,17 @@ class CreditEventListener implements EventSubscriberInterface
     }
 
 
-    public function recreditOnCancel(OrderEvent $event)
+    public function updateCreditOnCancel(OrderEvent $event)
     {
         $order = $event->getOrder();
-        if ($order->getOrderStatus()->getCode() === self::CANCELED) {
-            $haveCredit = CreditAmountHistoryQuery::create()
-                ->findOneByOrderId($order->getId());
-            if (null !== $haveCredit) {
+        if ($order->isCancelled()) {
+            $haveCredits = CreditAmountHistoryQuery::create()
+                ->findByOrderId($order->getId());
+
+            foreach ($haveCredits as $haveCredit) {
                 $creditEvent = new CreditAccountEvent($order->getCustomer(), -($haveCredit->getAmount()), $order->getId());
                 $event->getDispatcher()->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $creditEvent);
             }
-
         }
     }
 
@@ -126,7 +126,7 @@ class CreditEventListener implements EventSubscriberInterface
         return [
             CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT => ['addAmount', 128],
             TheliaEvents::ORDER_BEFORE_PAYMENT => ['verifyCreditUsage', 128],
-            TheliaEvents::ORDER_UPDATE_STATUS => ['recreditOnCancel'],
+            TheliaEvents::ORDER_UPDATE_STATUS => ['updateCreditOnCancel'],
             TheliaEvents::COUPON_CONSUME => ["verifyCoupon", 140],
         ];
     }
