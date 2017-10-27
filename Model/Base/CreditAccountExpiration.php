@@ -6,10 +6,9 @@ use \DateTime;
 use \Exception;
 use \PDO;
 use CreditAccount\Model\CreditAccount as ChildCreditAccount;
+use CreditAccount\Model\CreditAccountExpirationQuery as ChildCreditAccountExpirationQuery;
 use CreditAccount\Model\CreditAccountQuery as ChildCreditAccountQuery;
-use CreditAccount\Model\CreditAmountHistory as ChildCreditAmountHistory;
-use CreditAccount\Model\CreditAmountHistoryQuery as ChildCreditAmountHistoryQuery;
-use CreditAccount\Model\Map\CreditAmountHistoryTableMap;
+use CreditAccount\Model\Map\CreditAccountExpirationTableMap;
 use Propel\Runtime\Propel;
 use Propel\Runtime\ActiveQuery\Criteria;
 use Propel\Runtime\ActiveQuery\ModelCriteria;
@@ -22,12 +21,12 @@ use Propel\Runtime\Map\TableMap;
 use Propel\Runtime\Parser\AbstractParser;
 use Propel\Runtime\Util\PropelDateTime;
 
-abstract class CreditAmountHistory implements ActiveRecordInterface
+abstract class CreditAccountExpiration implements ActiveRecordInterface
 {
     /**
      * TableMap class name
      */
-    const TABLE_MAP = '\\CreditAccount\\Model\\Map\\CreditAmountHistoryTableMap';
+    const TABLE_MAP = '\\CreditAccount\\Model\\Map\\CreditAccountExpirationTableMap';
 
 
     /**
@@ -69,36 +68,16 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
     protected $credit_account_id;
 
     /**
-     * The value for the amount field.
-     * Note: this column has a database default value of: 0.0
-     * @var        double
-     */
-    protected $amount;
-
-    /**
-     * The value for the who field.
-     * Note: this column has a database default value of: ''
+     * The value for the expiration_start field.
      * @var        string
      */
-    protected $who;
+    protected $expiration_start;
 
     /**
-     * The value for the order_id field.
+     * The value for the expiration_delay field.
      * @var        int
      */
-    protected $order_id;
-
-    /**
-     * The value for the created_at field.
-     * @var        string
-     */
-    protected $created_at;
-
-    /**
-     * The value for the updated_at field.
-     * @var        string
-     */
-    protected $updated_at;
+    protected $expiration_delay;
 
     /**
      * @var        CreditAccount
@@ -114,24 +93,10 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
     protected $alreadyInSave = false;
 
     /**
-     * Applies default values to this object.
-     * This method should be called from the object's constructor (or
-     * equivalent initialization method).
-     * @see __construct()
-     */
-    public function applyDefaultValues()
-    {
-        $this->amount = 0.0;
-        $this->who = '';
-    }
-
-    /**
-     * Initializes internal state of CreditAccount\Model\Base\CreditAmountHistory object.
-     * @see applyDefaults()
+     * Initializes internal state of CreditAccount\Model\Base\CreditAccountExpiration object.
      */
     public function __construct()
     {
-        $this->applyDefaultValues();
     }
 
     /**
@@ -223,9 +188,9 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
     }
 
     /**
-     * Compares this with another <code>CreditAmountHistory</code> instance.  If
-     * <code>obj</code> is an instance of <code>CreditAmountHistory</code>, delegates to
-     * <code>equals(CreditAmountHistory)</code>.  Otherwise, returns <code>false</code>.
+     * Compares this with another <code>CreditAccountExpiration</code> instance.  If
+     * <code>obj</code> is an instance of <code>CreditAccountExpiration</code>, delegates to
+     * <code>equals(CreditAccountExpiration)</code>.  Otherwise, returns <code>false</code>.
      *
      * @param  mixed   $obj The object to compare to.
      * @return boolean Whether equal to the object specified.
@@ -308,7 +273,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      * @param string $name  The virtual column name
      * @param mixed  $value The value to give to the virtual column
      *
-     * @return CreditAmountHistory The current object, for fluid interface
+     * @return CreditAccountExpiration The current object, for fluid interface
      */
     public function setVirtualColumn($name, $value)
     {
@@ -340,7 +305,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      *                       or a format name ('XML', 'YAML', 'JSON', 'CSV')
      * @param string $data The source data to import from
      *
-     * @return CreditAmountHistory The current object, for fluid interface
+     * @return CreditAccountExpiration The current object, for fluid interface
      */
     public function importFrom($parser, $data)
     {
@@ -408,83 +373,41 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
     }
 
     /**
-     * Get the [amount] column value.
+     * Get the [optionally formatted] temporal [expiration_start] column value.
      *
-     * @return   double
+     *
+     * @param      string $format The date/time format string (either date()-style or strftime()-style).
+     *                            If format is NULL, then the raw \DateTime object will be returned.
+     *
+     * @return mixed Formatted date/time value as string or \DateTime object (if format is NULL), NULL if column is NULL, and 0 if column value is 0000-00-00 00:00:00
+     *
+     * @throws PropelException - if unable to parse/validate the date/time value.
      */
-    public function getAmount()
+    public function getExpirationStart($format = NULL)
     {
-
-        return $this->amount;
+        if ($format === null) {
+            return $this->expiration_start;
+        } else {
+            return $this->expiration_start instanceof \DateTime ? $this->expiration_start->format($format) : null;
+        }
     }
 
     /**
-     * Get the [who] column value.
-     *
-     * @return   string
-     */
-    public function getWho()
-    {
-
-        return $this->who;
-    }
-
-    /**
-     * Get the [order_id] column value.
+     * Get the [expiration_delay] column value.
      *
      * @return   int
      */
-    public function getOrderId()
+    public function getExpirationDelay()
     {
 
-        return $this->order_id;
-    }
-
-    /**
-     * Get the [optionally formatted] temporal [created_at] column value.
-     *
-     *
-     * @param      string $format The date/time format string (either date()-style or strftime()-style).
-     *                            If format is NULL, then the raw \DateTime object will be returned.
-     *
-     * @return mixed Formatted date/time value as string or \DateTime object (if format is NULL), NULL if column is NULL, and 0 if column value is 0000-00-00 00:00:00
-     *
-     * @throws PropelException - if unable to parse/validate the date/time value.
-     */
-    public function getCreatedAt($format = NULL)
-    {
-        if ($format === null) {
-            return $this->created_at;
-        } else {
-            return $this->created_at instanceof \DateTime ? $this->created_at->format($format) : null;
-        }
-    }
-
-    /**
-     * Get the [optionally formatted] temporal [updated_at] column value.
-     *
-     *
-     * @param      string $format The date/time format string (either date()-style or strftime()-style).
-     *                            If format is NULL, then the raw \DateTime object will be returned.
-     *
-     * @return mixed Formatted date/time value as string or \DateTime object (if format is NULL), NULL if column is NULL, and 0 if column value is 0000-00-00 00:00:00
-     *
-     * @throws PropelException - if unable to parse/validate the date/time value.
-     */
-    public function getUpdatedAt($format = NULL)
-    {
-        if ($format === null) {
-            return $this->updated_at;
-        } else {
-            return $this->updated_at instanceof \DateTime ? $this->updated_at->format($format) : null;
-        }
+        return $this->expiration_delay;
     }
 
     /**
      * Set the value of [id] column.
      *
      * @param      int $v new value
-     * @return   \CreditAccount\Model\CreditAmountHistory The current object (for fluent API support)
+     * @return   \CreditAccount\Model\CreditAccountExpiration The current object (for fluent API support)
      */
     public function setId($v)
     {
@@ -494,7 +417,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
 
         if ($this->id !== $v) {
             $this->id = $v;
-            $this->modifiedColumns[CreditAmountHistoryTableMap::ID] = true;
+            $this->modifiedColumns[CreditAccountExpirationTableMap::ID] = true;
         }
 
 
@@ -505,7 +428,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      * Set the value of [credit_account_id] column.
      *
      * @param      int $v new value
-     * @return   \CreditAccount\Model\CreditAmountHistory The current object (for fluent API support)
+     * @return   \CreditAccount\Model\CreditAccountExpiration The current object (for fluent API support)
      */
     public function setCreditAccountId($v)
     {
@@ -515,7 +438,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
 
         if ($this->credit_account_id !== $v) {
             $this->credit_account_id = $v;
-            $this->modifiedColumns[CreditAmountHistoryTableMap::CREDIT_ACCOUNT_ID] = true;
+            $this->modifiedColumns[CreditAccountExpirationTableMap::CREDIT_ACCOUNT_ID] = true;
         }
 
         if ($this->aCreditAccount !== null && $this->aCreditAccount->getId() !== $v) {
@@ -527,109 +450,46 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
     } // setCreditAccountId()
 
     /**
-     * Set the value of [amount] column.
+     * Sets the value of [expiration_start] column to a normalized version of the date/time value specified.
      *
-     * @param      double $v new value
-     * @return   \CreditAccount\Model\CreditAmountHistory The current object (for fluent API support)
+     * @param      mixed $v string, integer (timestamp), or \DateTime value.
+     *               Empty strings are treated as NULL.
+     * @return   \CreditAccount\Model\CreditAccountExpiration The current object (for fluent API support)
      */
-    public function setAmount($v)
+    public function setExpirationStart($v)
     {
-        if ($v !== null) {
-            $v = (double) $v;
-        }
-
-        if ($this->amount !== $v) {
-            $this->amount = $v;
-            $this->modifiedColumns[CreditAmountHistoryTableMap::AMOUNT] = true;
-        }
+        $dt = PropelDateTime::newInstance($v, null, '\DateTime');
+        if ($this->expiration_start !== null || $dt !== null) {
+            if ($dt !== $this->expiration_start) {
+                $this->expiration_start = $dt;
+                $this->modifiedColumns[CreditAccountExpirationTableMap::EXPIRATION_START] = true;
+            }
+        } // if either are not null
 
 
         return $this;
-    } // setAmount()
+    } // setExpirationStart()
 
     /**
-     * Set the value of [who] column.
-     *
-     * @param      string $v new value
-     * @return   \CreditAccount\Model\CreditAmountHistory The current object (for fluent API support)
-     */
-    public function setWho($v)
-    {
-        if ($v !== null) {
-            $v = (string) $v;
-        }
-
-        if ($this->who !== $v) {
-            $this->who = $v;
-            $this->modifiedColumns[CreditAmountHistoryTableMap::WHO] = true;
-        }
-
-
-        return $this;
-    } // setWho()
-
-    /**
-     * Set the value of [order_id] column.
+     * Set the value of [expiration_delay] column.
      *
      * @param      int $v new value
-     * @return   \CreditAccount\Model\CreditAmountHistory The current object (for fluent API support)
+     * @return   \CreditAccount\Model\CreditAccountExpiration The current object (for fluent API support)
      */
-    public function setOrderId($v)
+    public function setExpirationDelay($v)
     {
         if ($v !== null) {
             $v = (int) $v;
         }
 
-        if ($this->order_id !== $v) {
-            $this->order_id = $v;
-            $this->modifiedColumns[CreditAmountHistoryTableMap::ORDER_ID] = true;
+        if ($this->expiration_delay !== $v) {
+            $this->expiration_delay = $v;
+            $this->modifiedColumns[CreditAccountExpirationTableMap::EXPIRATION_DELAY] = true;
         }
 
 
         return $this;
-    } // setOrderId()
-
-    /**
-     * Sets the value of [created_at] column to a normalized version of the date/time value specified.
-     *
-     * @param      mixed $v string, integer (timestamp), or \DateTime value.
-     *               Empty strings are treated as NULL.
-     * @return   \CreditAccount\Model\CreditAmountHistory The current object (for fluent API support)
-     */
-    public function setCreatedAt($v)
-    {
-        $dt = PropelDateTime::newInstance($v, null, '\DateTime');
-        if ($this->created_at !== null || $dt !== null) {
-            if ($dt !== $this->created_at) {
-                $this->created_at = $dt;
-                $this->modifiedColumns[CreditAmountHistoryTableMap::CREATED_AT] = true;
-            }
-        } // if either are not null
-
-
-        return $this;
-    } // setCreatedAt()
-
-    /**
-     * Sets the value of [updated_at] column to a normalized version of the date/time value specified.
-     *
-     * @param      mixed $v string, integer (timestamp), or \DateTime value.
-     *               Empty strings are treated as NULL.
-     * @return   \CreditAccount\Model\CreditAmountHistory The current object (for fluent API support)
-     */
-    public function setUpdatedAt($v)
-    {
-        $dt = PropelDateTime::newInstance($v, null, '\DateTime');
-        if ($this->updated_at !== null || $dt !== null) {
-            if ($dt !== $this->updated_at) {
-                $this->updated_at = $dt;
-                $this->modifiedColumns[CreditAmountHistoryTableMap::UPDATED_AT] = true;
-            }
-        } // if either are not null
-
-
-        return $this;
-    } // setUpdatedAt()
+    } // setExpirationDelay()
 
     /**
      * Indicates whether the columns in this object are only set to default values.
@@ -641,14 +501,6 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      */
     public function hasOnlyDefaultValues()
     {
-            if ($this->amount !== 0.0) {
-                return false;
-            }
-
-            if ($this->who !== '') {
-                return false;
-            }
-
         // otherwise, everything was equal, so return TRUE
         return true;
     } // hasOnlyDefaultValues()
@@ -676,32 +528,20 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
         try {
 
 
-            $col = $row[TableMap::TYPE_NUM == $indexType ? 0 + $startcol : CreditAmountHistoryTableMap::translateFieldName('Id', TableMap::TYPE_PHPNAME, $indexType)];
+            $col = $row[TableMap::TYPE_NUM == $indexType ? 0 + $startcol : CreditAccountExpirationTableMap::translateFieldName('Id', TableMap::TYPE_PHPNAME, $indexType)];
             $this->id = (null !== $col) ? (int) $col : null;
 
-            $col = $row[TableMap::TYPE_NUM == $indexType ? 1 + $startcol : CreditAmountHistoryTableMap::translateFieldName('CreditAccountId', TableMap::TYPE_PHPNAME, $indexType)];
+            $col = $row[TableMap::TYPE_NUM == $indexType ? 1 + $startcol : CreditAccountExpirationTableMap::translateFieldName('CreditAccountId', TableMap::TYPE_PHPNAME, $indexType)];
             $this->credit_account_id = (null !== $col) ? (int) $col : null;
 
-            $col = $row[TableMap::TYPE_NUM == $indexType ? 2 + $startcol : CreditAmountHistoryTableMap::translateFieldName('Amount', TableMap::TYPE_PHPNAME, $indexType)];
-            $this->amount = (null !== $col) ? (double) $col : null;
-
-            $col = $row[TableMap::TYPE_NUM == $indexType ? 3 + $startcol : CreditAmountHistoryTableMap::translateFieldName('Who', TableMap::TYPE_PHPNAME, $indexType)];
-            $this->who = (null !== $col) ? (string) $col : null;
-
-            $col = $row[TableMap::TYPE_NUM == $indexType ? 4 + $startcol : CreditAmountHistoryTableMap::translateFieldName('OrderId', TableMap::TYPE_PHPNAME, $indexType)];
-            $this->order_id = (null !== $col) ? (int) $col : null;
-
-            $col = $row[TableMap::TYPE_NUM == $indexType ? 5 + $startcol : CreditAmountHistoryTableMap::translateFieldName('CreatedAt', TableMap::TYPE_PHPNAME, $indexType)];
+            $col = $row[TableMap::TYPE_NUM == $indexType ? 2 + $startcol : CreditAccountExpirationTableMap::translateFieldName('ExpirationStart', TableMap::TYPE_PHPNAME, $indexType)];
             if ($col === '0000-00-00 00:00:00') {
                 $col = null;
             }
-            $this->created_at = (null !== $col) ? PropelDateTime::newInstance($col, null, '\DateTime') : null;
+            $this->expiration_start = (null !== $col) ? PropelDateTime::newInstance($col, null, '\DateTime') : null;
 
-            $col = $row[TableMap::TYPE_NUM == $indexType ? 6 + $startcol : CreditAmountHistoryTableMap::translateFieldName('UpdatedAt', TableMap::TYPE_PHPNAME, $indexType)];
-            if ($col === '0000-00-00 00:00:00') {
-                $col = null;
-            }
-            $this->updated_at = (null !== $col) ? PropelDateTime::newInstance($col, null, '\DateTime') : null;
+            $col = $row[TableMap::TYPE_NUM == $indexType ? 3 + $startcol : CreditAccountExpirationTableMap::translateFieldName('ExpirationDelay', TableMap::TYPE_PHPNAME, $indexType)];
+            $this->expiration_delay = (null !== $col) ? (int) $col : null;
             $this->resetModified();
 
             $this->setNew(false);
@@ -710,10 +550,10 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
                 $this->ensureConsistency();
             }
 
-            return $startcol + 7; // 7 = CreditAmountHistoryTableMap::NUM_HYDRATE_COLUMNS.
+            return $startcol + 4; // 4 = CreditAccountExpirationTableMap::NUM_HYDRATE_COLUMNS.
 
         } catch (Exception $e) {
-            throw new PropelException("Error populating \CreditAccount\Model\CreditAmountHistory object", 0, $e);
+            throw new PropelException("Error populating \CreditAccount\Model\CreditAccountExpiration object", 0, $e);
         }
     }
 
@@ -758,13 +598,13 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
         }
 
         if ($con === null) {
-            $con = Propel::getServiceContainer()->getReadConnection(CreditAmountHistoryTableMap::DATABASE_NAME);
+            $con = Propel::getServiceContainer()->getReadConnection(CreditAccountExpirationTableMap::DATABASE_NAME);
         }
 
         // We don't need to alter the object instance pool; we're just modifying this instance
         // already in the pool.
 
-        $dataFetcher = ChildCreditAmountHistoryQuery::create(null, $this->buildPkeyCriteria())->setFormatter(ModelCriteria::FORMAT_STATEMENT)->find($con);
+        $dataFetcher = ChildCreditAccountExpirationQuery::create(null, $this->buildPkeyCriteria())->setFormatter(ModelCriteria::FORMAT_STATEMENT)->find($con);
         $row = $dataFetcher->fetch();
         $dataFetcher->close();
         if (!$row) {
@@ -784,8 +624,8 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      * @param      ConnectionInterface $con
      * @return void
      * @throws PropelException
-     * @see CreditAmountHistory::setDeleted()
-     * @see CreditAmountHistory::isDeleted()
+     * @see CreditAccountExpiration::setDeleted()
+     * @see CreditAccountExpiration::isDeleted()
      */
     public function delete(ConnectionInterface $con = null)
     {
@@ -794,12 +634,12 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
         }
 
         if ($con === null) {
-            $con = Propel::getServiceContainer()->getWriteConnection(CreditAmountHistoryTableMap::DATABASE_NAME);
+            $con = Propel::getServiceContainer()->getWriteConnection(CreditAccountExpirationTableMap::DATABASE_NAME);
         }
 
         $con->beginTransaction();
         try {
-            $deleteQuery = ChildCreditAmountHistoryQuery::create()
+            $deleteQuery = ChildCreditAccountExpirationQuery::create()
                 ->filterByPrimaryKey($this->getPrimaryKey());
             $ret = $this->preDelete($con);
             if ($ret) {
@@ -836,7 +676,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
         }
 
         if ($con === null) {
-            $con = Propel::getServiceContainer()->getWriteConnection(CreditAmountHistoryTableMap::DATABASE_NAME);
+            $con = Propel::getServiceContainer()->getWriteConnection(CreditAccountExpirationTableMap::DATABASE_NAME);
         }
 
         $con->beginTransaction();
@@ -845,19 +685,8 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
             $ret = $this->preSave($con);
             if ($isInsert) {
                 $ret = $ret && $this->preInsert($con);
-                // timestampable behavior
-                if (!$this->isColumnModified(CreditAmountHistoryTableMap::CREATED_AT)) {
-                    $this->setCreatedAt(time());
-                }
-                if (!$this->isColumnModified(CreditAmountHistoryTableMap::UPDATED_AT)) {
-                    $this->setUpdatedAt(time());
-                }
             } else {
                 $ret = $ret && $this->preUpdate($con);
-                // timestampable behavior
-                if ($this->isModified() && !$this->isColumnModified(CreditAmountHistoryTableMap::UPDATED_AT)) {
-                    $this->setUpdatedAt(time());
-                }
             }
             if ($ret) {
                 $affectedRows = $this->doSave($con);
@@ -867,7 +696,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
                     $this->postUpdate($con);
                 }
                 $this->postSave($con);
-                CreditAmountHistoryTableMap::addInstanceToPool($this);
+                CreditAccountExpirationTableMap::addInstanceToPool($this);
             } else {
                 $affectedRows = 0;
             }
@@ -940,36 +769,27 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
         $modifiedColumns = array();
         $index = 0;
 
-        $this->modifiedColumns[CreditAmountHistoryTableMap::ID] = true;
+        $this->modifiedColumns[CreditAccountExpirationTableMap::ID] = true;
         if (null !== $this->id) {
-            throw new PropelException('Cannot insert a value for auto-increment primary key (' . CreditAmountHistoryTableMap::ID . ')');
+            throw new PropelException('Cannot insert a value for auto-increment primary key (' . CreditAccountExpirationTableMap::ID . ')');
         }
 
          // check the columns in natural order for more readable SQL queries
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::ID)) {
+        if ($this->isColumnModified(CreditAccountExpirationTableMap::ID)) {
             $modifiedColumns[':p' . $index++]  = 'ID';
         }
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::CREDIT_ACCOUNT_ID)) {
+        if ($this->isColumnModified(CreditAccountExpirationTableMap::CREDIT_ACCOUNT_ID)) {
             $modifiedColumns[':p' . $index++]  = 'CREDIT_ACCOUNT_ID';
         }
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::AMOUNT)) {
-            $modifiedColumns[':p' . $index++]  = 'AMOUNT';
+        if ($this->isColumnModified(CreditAccountExpirationTableMap::EXPIRATION_START)) {
+            $modifiedColumns[':p' . $index++]  = 'EXPIRATION_START';
         }
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::WHO)) {
-            $modifiedColumns[':p' . $index++]  = 'WHO';
-        }
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::ORDER_ID)) {
-            $modifiedColumns[':p' . $index++]  = 'ORDER_ID';
-        }
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::CREATED_AT)) {
-            $modifiedColumns[':p' . $index++]  = 'CREATED_AT';
-        }
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::UPDATED_AT)) {
-            $modifiedColumns[':p' . $index++]  = 'UPDATED_AT';
+        if ($this->isColumnModified(CreditAccountExpirationTableMap::EXPIRATION_DELAY)) {
+            $modifiedColumns[':p' . $index++]  = 'EXPIRATION_DELAY';
         }
 
         $sql = sprintf(
-            'INSERT INTO credit_amount_history (%s) VALUES (%s)',
+            'INSERT INTO credit_account_expiration (%s) VALUES (%s)',
             implode(', ', $modifiedColumns),
             implode(', ', array_keys($modifiedColumns))
         );
@@ -984,20 +804,11 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
                     case 'CREDIT_ACCOUNT_ID':
                         $stmt->bindValue($identifier, $this->credit_account_id, PDO::PARAM_INT);
                         break;
-                    case 'AMOUNT':
-                        $stmt->bindValue($identifier, $this->amount, PDO::PARAM_STR);
+                    case 'EXPIRATION_START':
+                        $stmt->bindValue($identifier, $this->expiration_start ? $this->expiration_start->format("Y-m-d H:i:s") : null, PDO::PARAM_STR);
                         break;
-                    case 'WHO':
-                        $stmt->bindValue($identifier, $this->who, PDO::PARAM_STR);
-                        break;
-                    case 'ORDER_ID':
-                        $stmt->bindValue($identifier, $this->order_id, PDO::PARAM_INT);
-                        break;
-                    case 'CREATED_AT':
-                        $stmt->bindValue($identifier, $this->created_at ? $this->created_at->format("Y-m-d H:i:s") : null, PDO::PARAM_STR);
-                        break;
-                    case 'UPDATED_AT':
-                        $stmt->bindValue($identifier, $this->updated_at ? $this->updated_at->format("Y-m-d H:i:s") : null, PDO::PARAM_STR);
+                    case 'EXPIRATION_DELAY':
+                        $stmt->bindValue($identifier, $this->expiration_delay, PDO::PARAM_INT);
                         break;
                 }
             }
@@ -1045,7 +856,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      */
     public function getByName($name, $type = TableMap::TYPE_PHPNAME)
     {
-        $pos = CreditAmountHistoryTableMap::translateFieldName($name, $type, TableMap::TYPE_NUM);
+        $pos = CreditAccountExpirationTableMap::translateFieldName($name, $type, TableMap::TYPE_NUM);
         $field = $this->getByPosition($pos);
 
         return $field;
@@ -1068,19 +879,10 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
                 return $this->getCreditAccountId();
                 break;
             case 2:
-                return $this->getAmount();
+                return $this->getExpirationStart();
                 break;
             case 3:
-                return $this->getWho();
-                break;
-            case 4:
-                return $this->getOrderId();
-                break;
-            case 5:
-                return $this->getCreatedAt();
-                break;
-            case 6:
-                return $this->getUpdatedAt();
+                return $this->getExpirationDelay();
                 break;
             default:
                 return null;
@@ -1105,19 +907,16 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      */
     public function toArray($keyType = TableMap::TYPE_PHPNAME, $includeLazyLoadColumns = true, $alreadyDumpedObjects = array(), $includeForeignObjects = false)
     {
-        if (isset($alreadyDumpedObjects['CreditAmountHistory'][$this->getPrimaryKey()])) {
+        if (isset($alreadyDumpedObjects['CreditAccountExpiration'][$this->getPrimaryKey()])) {
             return '*RECURSION*';
         }
-        $alreadyDumpedObjects['CreditAmountHistory'][$this->getPrimaryKey()] = true;
-        $keys = CreditAmountHistoryTableMap::getFieldNames($keyType);
+        $alreadyDumpedObjects['CreditAccountExpiration'][$this->getPrimaryKey()] = true;
+        $keys = CreditAccountExpirationTableMap::getFieldNames($keyType);
         $result = array(
             $keys[0] => $this->getId(),
             $keys[1] => $this->getCreditAccountId(),
-            $keys[2] => $this->getAmount(),
-            $keys[3] => $this->getWho(),
-            $keys[4] => $this->getOrderId(),
-            $keys[5] => $this->getCreatedAt(),
-            $keys[6] => $this->getUpdatedAt(),
+            $keys[2] => $this->getExpirationStart(),
+            $keys[3] => $this->getExpirationDelay(),
         );
         $virtualColumns = $this->virtualColumns;
         foreach ($virtualColumns as $key => $virtualColumn) {
@@ -1146,7 +945,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      */
     public function setByName($name, $value, $type = TableMap::TYPE_PHPNAME)
     {
-        $pos = CreditAmountHistoryTableMap::translateFieldName($name, $type, TableMap::TYPE_NUM);
+        $pos = CreditAccountExpirationTableMap::translateFieldName($name, $type, TableMap::TYPE_NUM);
 
         return $this->setByPosition($pos, $value);
     }
@@ -1169,19 +968,10 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
                 $this->setCreditAccountId($value);
                 break;
             case 2:
-                $this->setAmount($value);
+                $this->setExpirationStart($value);
                 break;
             case 3:
-                $this->setWho($value);
-                break;
-            case 4:
-                $this->setOrderId($value);
-                break;
-            case 5:
-                $this->setCreatedAt($value);
-                break;
-            case 6:
-                $this->setUpdatedAt($value);
+                $this->setExpirationDelay($value);
                 break;
         } // switch()
     }
@@ -1205,15 +995,12 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      */
     public function fromArray($arr, $keyType = TableMap::TYPE_PHPNAME)
     {
-        $keys = CreditAmountHistoryTableMap::getFieldNames($keyType);
+        $keys = CreditAccountExpirationTableMap::getFieldNames($keyType);
 
         if (array_key_exists($keys[0], $arr)) $this->setId($arr[$keys[0]]);
         if (array_key_exists($keys[1], $arr)) $this->setCreditAccountId($arr[$keys[1]]);
-        if (array_key_exists($keys[2], $arr)) $this->setAmount($arr[$keys[2]]);
-        if (array_key_exists($keys[3], $arr)) $this->setWho($arr[$keys[3]]);
-        if (array_key_exists($keys[4], $arr)) $this->setOrderId($arr[$keys[4]]);
-        if (array_key_exists($keys[5], $arr)) $this->setCreatedAt($arr[$keys[5]]);
-        if (array_key_exists($keys[6], $arr)) $this->setUpdatedAt($arr[$keys[6]]);
+        if (array_key_exists($keys[2], $arr)) $this->setExpirationStart($arr[$keys[2]]);
+        if (array_key_exists($keys[3], $arr)) $this->setExpirationDelay($arr[$keys[3]]);
     }
 
     /**
@@ -1223,15 +1010,12 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      */
     public function buildCriteria()
     {
-        $criteria = new Criteria(CreditAmountHistoryTableMap::DATABASE_NAME);
+        $criteria = new Criteria(CreditAccountExpirationTableMap::DATABASE_NAME);
 
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::ID)) $criteria->add(CreditAmountHistoryTableMap::ID, $this->id);
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::CREDIT_ACCOUNT_ID)) $criteria->add(CreditAmountHistoryTableMap::CREDIT_ACCOUNT_ID, $this->credit_account_id);
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::AMOUNT)) $criteria->add(CreditAmountHistoryTableMap::AMOUNT, $this->amount);
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::WHO)) $criteria->add(CreditAmountHistoryTableMap::WHO, $this->who);
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::ORDER_ID)) $criteria->add(CreditAmountHistoryTableMap::ORDER_ID, $this->order_id);
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::CREATED_AT)) $criteria->add(CreditAmountHistoryTableMap::CREATED_AT, $this->created_at);
-        if ($this->isColumnModified(CreditAmountHistoryTableMap::UPDATED_AT)) $criteria->add(CreditAmountHistoryTableMap::UPDATED_AT, $this->updated_at);
+        if ($this->isColumnModified(CreditAccountExpirationTableMap::ID)) $criteria->add(CreditAccountExpirationTableMap::ID, $this->id);
+        if ($this->isColumnModified(CreditAccountExpirationTableMap::CREDIT_ACCOUNT_ID)) $criteria->add(CreditAccountExpirationTableMap::CREDIT_ACCOUNT_ID, $this->credit_account_id);
+        if ($this->isColumnModified(CreditAccountExpirationTableMap::EXPIRATION_START)) $criteria->add(CreditAccountExpirationTableMap::EXPIRATION_START, $this->expiration_start);
+        if ($this->isColumnModified(CreditAccountExpirationTableMap::EXPIRATION_DELAY)) $criteria->add(CreditAccountExpirationTableMap::EXPIRATION_DELAY, $this->expiration_delay);
 
         return $criteria;
     }
@@ -1246,8 +1030,8 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      */
     public function buildPkeyCriteria()
     {
-        $criteria = new Criteria(CreditAmountHistoryTableMap::DATABASE_NAME);
-        $criteria->add(CreditAmountHistoryTableMap::ID, $this->id);
+        $criteria = new Criteria(CreditAccountExpirationTableMap::DATABASE_NAME);
+        $criteria->add(CreditAccountExpirationTableMap::ID, $this->id);
 
         return $criteria;
     }
@@ -1288,7 +1072,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      * If desired, this method can also make copies of all associated (fkey referrers)
      * objects.
      *
-     * @param      object $copyObj An object of \CreditAccount\Model\CreditAmountHistory (or compatible) type.
+     * @param      object $copyObj An object of \CreditAccount\Model\CreditAccountExpiration (or compatible) type.
      * @param      boolean $deepCopy Whether to also copy all rows that refer (by fkey) to the current row.
      * @param      boolean $makeNew Whether to reset autoincrement PKs and make the object new.
      * @throws PropelException
@@ -1296,11 +1080,8 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
     public function copyInto($copyObj, $deepCopy = false, $makeNew = true)
     {
         $copyObj->setCreditAccountId($this->getCreditAccountId());
-        $copyObj->setAmount($this->getAmount());
-        $copyObj->setWho($this->getWho());
-        $copyObj->setOrderId($this->getOrderId());
-        $copyObj->setCreatedAt($this->getCreatedAt());
-        $copyObj->setUpdatedAt($this->getUpdatedAt());
+        $copyObj->setExpirationStart($this->getExpirationStart());
+        $copyObj->setExpirationDelay($this->getExpirationDelay());
         if ($makeNew) {
             $copyObj->setNew(true);
             $copyObj->setId(NULL); // this is a auto-increment column, so set to default value
@@ -1316,7 +1097,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      * objects.
      *
      * @param      boolean $deepCopy Whether to also copy all rows that refer (by fkey) to the current row.
-     * @return                 \CreditAccount\Model\CreditAmountHistory Clone of current object.
+     * @return                 \CreditAccount\Model\CreditAccountExpiration Clone of current object.
      * @throws PropelException
      */
     public function copy($deepCopy = false)
@@ -1333,7 +1114,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      * Declares an association between this object and a ChildCreditAccount object.
      *
      * @param                  ChildCreditAccount $v
-     * @return                 \CreditAccount\Model\CreditAmountHistory The current object (for fluent API support)
+     * @return                 \CreditAccount\Model\CreditAccountExpiration The current object (for fluent API support)
      * @throws PropelException
      */
     public function setCreditAccount(ChildCreditAccount $v = null)
@@ -1349,7 +1130,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
         // Add binding for other direction of this n:n relationship.
         // If this object has already been added to the ChildCreditAccount object, it will not be re-added.
         if ($v !== null) {
-            $v->addCreditAmountHistory($this);
+            $v->addCreditAccountExpiration($this);
         }
 
 
@@ -1373,7 +1154,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
                 to this object.  This level of coupling may, however, be
                 undesirable since it could result in an only partially populated collection
                 in the referenced object.
-                $this->aCreditAccount->addCreditAmountHistories($this);
+                $this->aCreditAccount->addCreditAccountExpirations($this);
              */
         }
 
@@ -1387,14 +1168,10 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
     {
         $this->id = null;
         $this->credit_account_id = null;
-        $this->amount = null;
-        $this->who = null;
-        $this->order_id = null;
-        $this->created_at = null;
-        $this->updated_at = null;
+        $this->expiration_start = null;
+        $this->expiration_delay = null;
         $this->alreadyInSave = false;
         $this->clearAllReferences();
-        $this->applyDefaultValues();
         $this->resetModified();
         $this->setNew(true);
         $this->setDeleted(false);
@@ -1424,21 +1201,7 @@ abstract class CreditAmountHistory implements ActiveRecordInterface
      */
     public function __toString()
     {
-        return (string) $this->exportTo(CreditAmountHistoryTableMap::DEFAULT_STRING_FORMAT);
-    }
-
-    // timestampable behavior
-
-    /**
-     * Mark the current object so that the update date doesn't get updated during next save
-     *
-     * @return     ChildCreditAmountHistory The current object (for fluent API support)
-     */
-    public function keepUpdateDateUnchanged()
-    {
-        $this->modifiedColumns[CreditAmountHistoryTableMap::UPDATED_AT] = true;
-
-        return $this;
+        return (string) $this->exportTo(CreditAccountExpirationTableMap::DEFAULT_STRING_FORMAT);
     }
 
     /**

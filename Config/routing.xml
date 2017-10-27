@@ -4,6 +4,14 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
 
+    <route id="creditAccount.configuration.view" path="/admin/module/CreditAccount">
+        <default key="_controller">CreditAccount\Controller\Admin\ConfigurationController::viewAction</default>
+    </route>
+
+    <route id="creditAccount.configuration.save" path="/admin/module/CreditAccount/save" methods="post">
+        <default key="_controller">CreditAccount\Controller\Admin\ConfigurationController::saveAction</default>
+    </route>
+
     <route id="creditAccount.addAmount" path="/admin/creditAccount/add">
         <default key="_controller">CreditAccount\Controller\Admin\CreditAccountAdminController::addAmount</default>
     </route>

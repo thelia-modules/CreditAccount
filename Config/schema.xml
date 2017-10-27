@@ -9,6 +9,15 @@
         </foreign-key>
         <behavior name="timestampable"/>
     </table>
+    <table name="credit_account_expiration">
+        <column autoIncrement="true" name="id" primaryKey="true" required="true" type="INTEGER" />
+        <column name="credit_account_id" type="INTEGER"/>
+        <column name="expiration_start" type="TIMESTAMP"/>
+        <column name="expiration_delay" type="INTEGER"/>
+        <foreign-key foreignTable="credit_account" name="fk_credit_account_expiration_credit_account_id" onDelete="CASCADE" onUpdate="RESTRICT">
+            <reference foreign="id" local="credit_account_id" />
+        </foreign-key>
+    </table>
     <table name="credit_amount_history">
         <column autoIncrement="true" name="id" primaryKey="true" required="true" type="INTEGER" />
         <column name="credit_account_id" type="INTEGER"/>

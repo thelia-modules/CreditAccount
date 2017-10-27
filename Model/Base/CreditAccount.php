@@ -6,6 +6,8 @@ use \DateTime;
 use \Exception;
 use \PDO;
 use CreditAccount\Model\CreditAccount as ChildCreditAccount;
+use CreditAccount\Model\CreditAccountExpiration as ChildCreditAccountExpiration;
+use CreditAccount\Model\CreditAccountExpirationQuery as ChildCreditAccountExpirationQuery;
 use CreditAccount\Model\CreditAccountQuery as ChildCreditAccountQuery;
 use CreditAccount\Model\CreditAmountHistory as ChildCreditAmountHistory;
 use CreditAccount\Model\CreditAmountHistoryQuery as ChildCreditAmountHistoryQuery;
@@ -67,7 +69,7 @@ abstract class CreditAccount implements ActiveRecordInterface
 
     /**
      * The value for the amount field.
-     * Note: this column has a database default value of: 0
+     * Note: this column has a database default value of: 0.0
      * @var        double
      */
     protected $amount;
@@ -96,6 +98,12 @@ abstract class CreditAccount implements ActiveRecordInterface
     protected $aCustomer;
 
     /**
+     * @var        ObjectCollection|ChildCreditAccountExpiration[] Collection to store aggregation of ChildCreditAccountExpiration objects.
+     */
+    protected $collCreditAccountExpirations;
+    protected $collCreditAccountExpirationsPartial;
+
+    /**
      * @var        ObjectCollection|ChildCreditAmountHistory[] Collection to store aggregation of ChildCreditAmountHistory objects.
      */
     protected $collCreditAmountHistories;
@@ -113,6 +121,12 @@ abstract class CreditAccount implements ActiveRecordInterface
      * An array of objects scheduled for deletion.
      * @var ObjectCollection
      */
+    protected $creditAccountExpirationsScheduledForDeletion = null;
+
+    /**
+     * An array of objects scheduled for deletion.
+     * @var ObjectCollection
+     */
     protected $creditAmountHistoriesScheduledForDeletion = null;
 
     /**
@@ -123,7 +137,7 @@ abstract class CreditAccount implements ActiveRecordInterface
      */
     public function applyDefaultValues()
     {
-        $this->amount = 0;
+        $this->amount = 0.0;
     }
 
     /**
@@ -578,7 +592,7 @@ abstract class CreditAccount implements ActiveRecordInterface
      */
     public function hasOnlyDefaultValues()
     {
-            if ($this->amount !== 0) {
+            if ($this->amount !== 0.0) {
                 return false;
             }
 
@@ -702,6 +716,8 @@ abstract class CreditAccount implements ActiveRecordInterface
         if ($deep) {  // also de-associate any related objects?
 
             $this->aCustomer = null;
+            $this->collCreditAccountExpirations = null;
+
             $this->collCreditAmountHistories = null;
 
         } // if (deep)
@@ -847,6 +863,23 @@ abstract class CreditAccount implements ActiveRecordInterface
                 }
                 $affectedRows += 1;
                 $this->resetModified();
+            }
+
+            if ($this->creditAccountExpirationsScheduledForDeletion !== null) {
+                if (!$this->creditAccountExpirationsScheduledForDeletion->isEmpty()) {
+                    \CreditAccount\Model\CreditAccountExpirationQuery::create()
+                        ->filterByPrimaryKeys($this->creditAccountExpirationsScheduledForDeletion->getPrimaryKeys(false))
+                        ->delete($con);
+                    $this->creditAccountExpirationsScheduledForDeletion = null;
+                }
+            }
+
+                if ($this->collCreditAccountExpirations !== null) {
+            foreach ($this->collCreditAccountExpirations as $referrerFK) {
+                    if (!$referrerFK->isDeleted() && ($referrerFK->isNew() || $referrerFK->isModified())) {
+                        $affectedRows += $referrerFK->save($con);
+                    }
+                }
             }
 
             if ($this->creditAmountHistoriesScheduledForDeletion !== null) {
@@ -1054,6 +1087,9 @@ abstract class CreditAccount implements ActiveRecordInterface
             if (null !== $this->aCustomer) {
                 $result['Customer'] = $this->aCustomer->toArray($keyType, $includeLazyLoadColumns,  $alreadyDumpedObjects, true);
             }
+            if (null !== $this->collCreditAccountExpirations) {
+                $result['CreditAccountExpirations'] = $this->collCreditAccountExpirations->toArray(null, true, $keyType, $includeLazyLoadColumns, $alreadyDumpedObjects);
+            }
             if (null !== $this->collCreditAmountHistories) {
                 $result['CreditAmountHistories'] = $this->collCreditAmountHistories->toArray(null, true, $keyType, $includeLazyLoadColumns, $alreadyDumpedObjects);
             }
@@ -1224,6 +1260,12 @@ abstract class CreditAccount implements ActiveRecordInterface
             // the getter/setter methods for fkey referrer objects.
             $copyObj->setNew(false);
 
+            foreach ($this->getCreditAccountExpirations() as $relObj) {
+                if ($relObj !== $this) {  // ensure that we don't try to copy a reference to ourselves
+                    $copyObj->addCreditAccountExpiration($relObj->copy($deepCopy));
+                }
+            }
+
             foreach ($this->getCreditAmountHistories() as $relObj) {
                 if ($relObj !== $this) {  // ensure that we don't try to copy a reference to ourselves
                     $copyObj->addCreditAmountHistory($relObj->copy($deepCopy));
@@ -1322,9 +1364,230 @@ abstract class CreditAccount implements ActiveRecordInterface
      */
     public function initRelation($relationName)
     {
+        if ('CreditAccountExpiration' == $relationName) {
+            return $this->initCreditAccountExpirations();
+        }
         if ('CreditAmountHistory' == $relationName) {
             return $this->initCreditAmountHistories();
         }
+    }
+
+    /**
+     * Clears out the collCreditAccountExpirations collection
+     *
+     * This does not modify the database; however, it will remove any associated objects, causing
+     * them to be refetched by subsequent calls to accessor method.
+     *
+     * @return void
+     * @see        addCreditAccountExpirations()
+     */
+    public function clearCreditAccountExpirations()
+    {
+        $this->collCreditAccountExpirations = null; // important to set this to NULL since that means it is uninitialized
+    }
+
+    /**
+     * Reset is the collCreditAccountExpirations collection loaded partially.
+     */
+    public function resetPartialCreditAccountExpirations($v = true)
+    {
+        $this->collCreditAccountExpirationsPartial = $v;
+    }
+
+    /**
+     * Initializes the collCreditAccountExpirations collection.
+     *
+     * By default this just sets the collCreditAccountExpirations collection to an empty array (like clearcollCreditAccountExpirations());
+     * however, you may wish to override this method in your stub class to provide setting appropriate
+     * to your application -- for example, setting the initial array to the values stored in database.
+     *
+     * @param      boolean $overrideExisting If set to true, the method call initializes
+     *                                        the collection even if it is not empty
+     *
+     * @return void
+     */
+    public function initCreditAccountExpirations($overrideExisting = true)
+    {
+        if (null !== $this->collCreditAccountExpirations && !$overrideExisting) {
+            return;
+        }
+        $this->collCreditAccountExpirations = new ObjectCollection();
+        $this->collCreditAccountExpirations->setModel('\CreditAccount\Model\CreditAccountExpiration');
+    }
+
+    /**
+     * Gets an array of ChildCreditAccountExpiration objects which contain a foreign key that references this object.
+     *
+     * If the $criteria is not null, it is used to always fetch the results from the database.
+     * Otherwise the results are fetched from the database the first time, then cached.
+     * Next time the same method is called without $criteria, the cached collection is returned.
+     * If this ChildCreditAccount is new, it will return
+     * an empty collection or the current collection; the criteria is ignored on a new object.
+     *
+     * @param      Criteria $criteria optional Criteria object to narrow the query
+     * @param      ConnectionInterface $con optional connection object
+     * @return Collection|ChildCreditAccountExpiration[] List of ChildCreditAccountExpiration objects
+     * @throws PropelException
+     */
+    public function getCreditAccountExpirations($criteria = null, ConnectionInterface $con = null)
+    {
+        $partial = $this->collCreditAccountExpirationsPartial && !$this->isNew();
+        if (null === $this->collCreditAccountExpirations || null !== $criteria  || $partial) {
+            if ($this->isNew() && null === $this->collCreditAccountExpirations) {
+                // return empty collection
+                $this->initCreditAccountExpirations();
+            } else {
+                $collCreditAccountExpirations = ChildCreditAccountExpirationQuery::create(null, $criteria)
+                    ->filterByCreditAccount($this)
+                    ->find($con);
+
+                if (null !== $criteria) {
+                    if (false !== $this->collCreditAccountExpirationsPartial && count($collCreditAccountExpirations)) {
+                        $this->initCreditAccountExpirations(false);
+
+                        foreach ($collCreditAccountExpirations as $obj) {
+                            if (false == $this->collCreditAccountExpirations->contains($obj)) {
+                                $this->collCreditAccountExpirations->append($obj);
+                            }
+                        }
+
+                        $this->collCreditAccountExpirationsPartial = true;
+                    }
+
+                    reset($collCreditAccountExpirations);
+
+                    return $collCreditAccountExpirations;
+                }
+
+                if ($partial && $this->collCreditAccountExpirations) {
+                    foreach ($this->collCreditAccountExpirations as $obj) {
+                        if ($obj->isNew()) {
+                            $collCreditAccountExpirations[] = $obj;
+                        }
+                    }
+                }
+
+                $this->collCreditAccountExpirations = $collCreditAccountExpirations;
+                $this->collCreditAccountExpirationsPartial = false;
+            }
+        }
+
+        return $this->collCreditAccountExpirations;
+    }
+
+    /**
+     * Sets a collection of CreditAccountExpiration objects related by a one-to-many relationship
+     * to the current object.
+     * It will also schedule objects for deletion based on a diff between old objects (aka persisted)
+     * and new objects from the given Propel collection.
+     *
+     * @param      Collection $creditAccountExpirations A Propel collection.
+     * @param      ConnectionInterface $con Optional connection object
+     * @return   ChildCreditAccount The current object (for fluent API support)
+     */
+    public function setCreditAccountExpirations(Collection $creditAccountExpirations, ConnectionInterface $con = null)
+    {
+        $creditAccountExpirationsToDelete = $this->getCreditAccountExpirations(new Criteria(), $con)->diff($creditAccountExpirations);
+
+
+        $this->creditAccountExpirationsScheduledForDeletion = $creditAccountExpirationsToDelete;
+
+        foreach ($creditAccountExpirationsToDelete as $creditAccountExpirationRemoved) {
+            $creditAccountExpirationRemoved->setCreditAccount(null);
+        }
+
+        $this->collCreditAccountExpirations = null;
+        foreach ($creditAccountExpirations as $creditAccountExpiration) {
+            $this->addCreditAccountExpiration($creditAccountExpiration);
+        }
+
+        $this->collCreditAccountExpirations = $creditAccountExpirations;
+        $this->collCreditAccountExpirationsPartial = false;
+
+        return $this;
+    }
+
+    /**
+     * Returns the number of related CreditAccountExpiration objects.
+     *
+     * @param      Criteria $criteria
+     * @param      boolean $distinct
+     * @param      ConnectionInterface $con
+     * @return int             Count of related CreditAccountExpiration objects.
+     * @throws PropelException
+     */
+    public function countCreditAccountExpirations(Criteria $criteria = null, $distinct = false, ConnectionInterface $con = null)
+    {
+        $partial = $this->collCreditAccountExpirationsPartial && !$this->isNew();
+        if (null === $this->collCreditAccountExpirations || null !== $criteria || $partial) {
+            if ($this->isNew() && null === $this->collCreditAccountExpirations) {
+                return 0;
+            }
+
+            if ($partial && !$criteria) {
+                return count($this->getCreditAccountExpirations());
+            }
+
+            $query = ChildCreditAccountExpirationQuery::create(null, $criteria);
+            if ($distinct) {
+                $query->distinct();
+            }
+
+            return $query
+                ->filterByCreditAccount($this)
+                ->count($con);
+        }
+
+        return count($this->collCreditAccountExpirations);
+    }
+
+    /**
+     * Method called to associate a ChildCreditAccountExpiration object to this object
+     * through the ChildCreditAccountExpiration foreign key attribute.
+     *
+     * @param    ChildCreditAccountExpiration $l ChildCreditAccountExpiration
+     * @return   \CreditAccount\Model\CreditAccount The current object (for fluent API support)
+     */
+    public function addCreditAccountExpiration(ChildCreditAccountExpiration $l)
+    {
+        if ($this->collCreditAccountExpirations === null) {
+            $this->initCreditAccountExpirations();
+            $this->collCreditAccountExpirationsPartial = true;
+        }
+
+        if (!in_array($l, $this->collCreditAccountExpirations->getArrayCopy(), true)) { // only add it if the **same** object is not already associated
+            $this->doAddCreditAccountExpiration($l);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param CreditAccountExpiration $creditAccountExpiration The creditAccountExpiration object to add.
+     */
+    protected function doAddCreditAccountExpiration($creditAccountExpiration)
+    {
+        $this->collCreditAccountExpirations[]= $creditAccountExpiration;
+        $creditAccountExpiration->setCreditAccount($this);
+    }
+
+    /**
+     * @param  CreditAccountExpiration $creditAccountExpiration The creditAccountExpiration object to remove.
+     * @return ChildCreditAccount The current object (for fluent API support)
+     */
+    public function removeCreditAccountExpiration($creditAccountExpiration)
+    {
+        if ($this->getCreditAccountExpirations()->contains($creditAccountExpiration)) {
+            $this->collCreditAccountExpirations->remove($this->collCreditAccountExpirations->search($creditAccountExpiration));
+            if (null === $this->creditAccountExpirationsScheduledForDeletion) {
+                $this->creditAccountExpirationsScheduledForDeletion = clone $this->collCreditAccountExpirations;
+                $this->creditAccountExpirationsScheduledForDeletion->clear();
+            }
+            $this->creditAccountExpirationsScheduledForDeletion[]= $creditAccountExpiration;
+            $creditAccountExpiration->setCreditAccount(null);
+        }
+
+        return $this;
     }
 
     /**
@@ -1575,6 +1838,11 @@ abstract class CreditAccount implements ActiveRecordInterface
     public function clearAllReferences($deep = false)
     {
         if ($deep) {
+            if ($this->collCreditAccountExpirations) {
+                foreach ($this->collCreditAccountExpirations as $o) {
+                    $o->clearAllReferences($deep);
+                }
+            }
             if ($this->collCreditAmountHistories) {
                 foreach ($this->collCreditAmountHistories as $o) {
                     $o->clearAllReferences($deep);
@@ -1582,6 +1850,7 @@ abstract class CreditAccount implements ActiveRecordInterface
             }
         } // if ($deep)
 
+        $this->collCreditAccountExpirations = null;
         $this->collCreditAmountHistories = null;
         $this->aCustomer = null;
     }
