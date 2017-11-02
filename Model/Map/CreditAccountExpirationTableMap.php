@@ -2,8 +2,8 @@
 
 namespace CreditAccount\Model\Map;
 
-use CreditAccount\Model\CreditAccount;
-use CreditAccount\Model\CreditAccountQuery;
+use CreditAccount\Model\CreditAccountExpiration;
+use CreditAccount\Model\CreditAccountExpirationQuery;
 use Propel\Runtime\Propel;
 use Propel\Runtime\ActiveQuery\Criteria;
 use Propel\Runtime\ActiveQuery\InstancePoolTrait;
@@ -16,7 +16,7 @@ use Propel\Runtime\Map\TableMapTrait;
 
 
 /**
- * This class defines the structure of the 'credit_account' table.
+ * This class defines the structure of the 'credit_account_expiration' table.
  *
  *
  *
@@ -26,14 +26,14 @@ use Propel\Runtime\Map\TableMapTrait;
  * (i.e. if it's a text column type).
  *
  */
-class CreditAccountTableMap extends TableMap
+class CreditAccountExpirationTableMap extends TableMap
 {
     use InstancePoolTrait;
     use TableMapTrait;
     /**
      * The (dot-path) name of this class
      */
-    const CLASS_NAME = 'CreditAccount.Model.Map.CreditAccountTableMap';
+    const CLASS_NAME = 'CreditAccount.Model.Map.CreditAccountExpirationTableMap';
 
     /**
      * The default database name for this class
@@ -43,22 +43,22 @@ class CreditAccountTableMap extends TableMap
     /**
      * The table name for this class
      */
-    const TABLE_NAME = 'credit_account';
+    const TABLE_NAME = 'credit_account_expiration';
 
     /**
      * The related Propel class for this table
      */
-    const OM_CLASS = '\\CreditAccount\\Model\\CreditAccount';
+    const OM_CLASS = '\\CreditAccount\\Model\\CreditAccountExpiration';
 
     /**
      * A class that can be returned by this tableMap
      */
-    const CLASS_DEFAULT = 'CreditAccount.Model.CreditAccount';
+    const CLASS_DEFAULT = 'CreditAccount.Model.CreditAccountExpiration';
 
     /**
      * The total number of columns
      */
-    const NUM_COLUMNS = 5;
+    const NUM_COLUMNS = 4;
 
     /**
      * The number of lazy-loaded columns
@@ -68,32 +68,27 @@ class CreditAccountTableMap extends TableMap
     /**
      * The number of columns to hydrate (NUM_COLUMNS - NUM_LAZY_LOAD_COLUMNS)
      */
-    const NUM_HYDRATE_COLUMNS = 5;
+    const NUM_HYDRATE_COLUMNS = 4;
 
     /**
      * the column name for the ID field
      */
-    const ID = 'credit_account.ID';
+    const ID = 'credit_account_expiration.ID';
 
     /**
-     * the column name for the AMOUNT field
+     * the column name for the CREDIT_ACCOUNT_ID field
      */
-    const AMOUNT = 'credit_account.AMOUNT';
+    const CREDIT_ACCOUNT_ID = 'credit_account_expiration.CREDIT_ACCOUNT_ID';
 
     /**
-     * the column name for the CUSTOMER_ID field
+     * the column name for the EXPIRATION_START field
      */
-    const CUSTOMER_ID = 'credit_account.CUSTOMER_ID';
+    const EXPIRATION_START = 'credit_account_expiration.EXPIRATION_START';
 
     /**
-     * the column name for the CREATED_AT field
+     * the column name for the EXPIRATION_DELAY field
      */
-    const CREATED_AT = 'credit_account.CREATED_AT';
-
-    /**
-     * the column name for the UPDATED_AT field
-     */
-    const UPDATED_AT = 'credit_account.UPDATED_AT';
+    const EXPIRATION_DELAY = 'credit_account_expiration.EXPIRATION_DELAY';
 
     /**
      * The default string format for model objects of the related table
@@ -107,12 +102,12 @@ class CreditAccountTableMap extends TableMap
      * e.g. self::$fieldNames[self::TYPE_PHPNAME][0] = 'Id'
      */
     protected static $fieldNames = array (
-        self::TYPE_PHPNAME       => array('Id', 'Amount', 'CustomerId', 'CreatedAt', 'UpdatedAt', ),
-        self::TYPE_STUDLYPHPNAME => array('id', 'amount', 'customerId', 'createdAt', 'updatedAt', ),
-        self::TYPE_COLNAME       => array(CreditAccountTableMap::ID, CreditAccountTableMap::AMOUNT, CreditAccountTableMap::CUSTOMER_ID, CreditAccountTableMap::CREATED_AT, CreditAccountTableMap::UPDATED_AT, ),
-        self::TYPE_RAW_COLNAME   => array('ID', 'AMOUNT', 'CUSTOMER_ID', 'CREATED_AT', 'UPDATED_AT', ),
-        self::TYPE_FIELDNAME     => array('id', 'amount', 'customer_id', 'created_at', 'updated_at', ),
-        self::TYPE_NUM           => array(0, 1, 2, 3, 4, )
+        self::TYPE_PHPNAME       => array('Id', 'CreditAccountId', 'ExpirationStart', 'ExpirationDelay', ),
+        self::TYPE_STUDLYPHPNAME => array('id', 'creditAccountId', 'expirationStart', 'expirationDelay', ),
+        self::TYPE_COLNAME       => array(CreditAccountExpirationTableMap::ID, CreditAccountExpirationTableMap::CREDIT_ACCOUNT_ID, CreditAccountExpirationTableMap::EXPIRATION_START, CreditAccountExpirationTableMap::EXPIRATION_DELAY, ),
+        self::TYPE_RAW_COLNAME   => array('ID', 'CREDIT_ACCOUNT_ID', 'EXPIRATION_START', 'EXPIRATION_DELAY', ),
+        self::TYPE_FIELDNAME     => array('id', 'credit_account_id', 'expiration_start', 'expiration_delay', ),
+        self::TYPE_NUM           => array(0, 1, 2, 3, )
     );
 
     /**
@@ -122,12 +117,12 @@ class CreditAccountTableMap extends TableMap
      * e.g. self::$fieldKeys[self::TYPE_PHPNAME]['Id'] = 0
      */
     protected static $fieldKeys = array (
-        self::TYPE_PHPNAME       => array('Id' => 0, 'Amount' => 1, 'CustomerId' => 2, 'CreatedAt' => 3, 'UpdatedAt' => 4, ),
-        self::TYPE_STUDLYPHPNAME => array('id' => 0, 'amount' => 1, 'customerId' => 2, 'createdAt' => 3, 'updatedAt' => 4, ),
-        self::TYPE_COLNAME       => array(CreditAccountTableMap::ID => 0, CreditAccountTableMap::AMOUNT => 1, CreditAccountTableMap::CUSTOMER_ID => 2, CreditAccountTableMap::CREATED_AT => 3, CreditAccountTableMap::UPDATED_AT => 4, ),
-        self::TYPE_RAW_COLNAME   => array('ID' => 0, 'AMOUNT' => 1, 'CUSTOMER_ID' => 2, 'CREATED_AT' => 3, 'UPDATED_AT' => 4, ),
-        self::TYPE_FIELDNAME     => array('id' => 0, 'amount' => 1, 'customer_id' => 2, 'created_at' => 3, 'updated_at' => 4, ),
-        self::TYPE_NUM           => array(0, 1, 2, 3, 4, )
+        self::TYPE_PHPNAME       => array('Id' => 0, 'CreditAccountId' => 1, 'ExpirationStart' => 2, 'ExpirationDelay' => 3, ),
+        self::TYPE_STUDLYPHPNAME => array('id' => 0, 'creditAccountId' => 1, 'expirationStart' => 2, 'expirationDelay' => 3, ),
+        self::TYPE_COLNAME       => array(CreditAccountExpirationTableMap::ID => 0, CreditAccountExpirationTableMap::CREDIT_ACCOUNT_ID => 1, CreditAccountExpirationTableMap::EXPIRATION_START => 2, CreditAccountExpirationTableMap::EXPIRATION_DELAY => 3, ),
+        self::TYPE_RAW_COLNAME   => array('ID' => 0, 'CREDIT_ACCOUNT_ID' => 1, 'EXPIRATION_START' => 2, 'EXPIRATION_DELAY' => 3, ),
+        self::TYPE_FIELDNAME     => array('id' => 0, 'credit_account_id' => 1, 'expiration_start' => 2, 'expiration_delay' => 3, ),
+        self::TYPE_NUM           => array(0, 1, 2, 3, )
     );
 
     /**
@@ -140,17 +135,16 @@ class CreditAccountTableMap extends TableMap
     public function initialize()
     {
         // attributes
-        $this->setName('credit_account');
-        $this->setPhpName('CreditAccount');
-        $this->setClassName('\\CreditAccount\\Model\\CreditAccount');
+        $this->setName('credit_account_expiration');
+        $this->setPhpName('CreditAccountExpiration');
+        $this->setClassName('\\CreditAccount\\Model\\CreditAccountExpiration');
         $this->setPackage('CreditAccount.Model');
         $this->setUseIdGenerator(true);
         // columns
         $this->addPrimaryKey('ID', 'Id', 'INTEGER', true, null, null);
-        $this->addColumn('AMOUNT', 'Amount', 'FLOAT', false, null, 0);
-        $this->addForeignKey('CUSTOMER_ID', 'CustomerId', 'INTEGER', 'customer', 'ID', true, null, null);
-        $this->addColumn('CREATED_AT', 'CreatedAt', 'TIMESTAMP', false, null, null);
-        $this->addColumn('UPDATED_AT', 'UpdatedAt', 'TIMESTAMP', false, null, null);
+        $this->addForeignKey('CREDIT_ACCOUNT_ID', 'CreditAccountId', 'INTEGER', 'credit_account', 'ID', false, null, null);
+        $this->addColumn('EXPIRATION_START', 'ExpirationStart', 'TIMESTAMP', false, null, null);
+        $this->addColumn('EXPIRATION_DELAY', 'ExpirationDelay', 'INTEGER', false, null, null);
     } // initialize()
 
     /**
@@ -158,33 +152,8 @@ class CreditAccountTableMap extends TableMap
      */
     public function buildRelations()
     {
-        $this->addRelation('Customer', '\\CreditAccount\\Model\\Thelia\\Model\\Customer', RelationMap::MANY_TO_ONE, array('customer_id' => 'id', ), 'CASCADE', 'RESTRICT');
-        $this->addRelation('CreditAccountExpiration', '\\CreditAccount\\Model\\CreditAccountExpiration', RelationMap::ONE_TO_MANY, array('id' => 'credit_account_id', ), 'CASCADE', 'RESTRICT', 'CreditAccountExpirations');
-        $this->addRelation('CreditAmountHistory', '\\CreditAccount\\Model\\CreditAmountHistory', RelationMap::ONE_TO_MANY, array('id' => 'credit_account_id', ), 'CASCADE', 'RESTRICT', 'CreditAmountHistories');
+        $this->addRelation('CreditAccount', '\\CreditAccount\\Model\\CreditAccount', RelationMap::MANY_TO_ONE, array('credit_account_id' => 'id', ), 'CASCADE', 'RESTRICT');
     } // buildRelations()
-
-    /**
-     *
-     * Gets the list of behaviors registered for this table
-     *
-     * @return array Associative array (name => parameters) of behaviors
-     */
-    public function getBehaviors()
-    {
-        return array(
-            'timestampable' => array('create_column' => 'created_at', 'update_column' => 'updated_at', ),
-        );
-    } // getBehaviors()
-    /**
-     * Method to invalidate the instance pool of all tables related to credit_account     * by a foreign key with ON DELETE CASCADE
-     */
-    public static function clearRelatedInstancePool()
-    {
-        // Invalidate objects in ".$this->getClassNameFromBuilder($joinedTableTableMapBuilder)." instance pool,
-        // since one or more of them may be deleted by ON DELETE CASCADE/SETNULL rule.
-                CreditAccountExpirationTableMap::clearInstancePool();
-                CreditAmountHistoryTableMap::clearInstancePool();
-            }
 
     /**
      * Retrieves a string version of the primary key from the DB resultset row that can be used to uniquely identify a row in this table.
@@ -242,7 +211,7 @@ class CreditAccountTableMap extends TableMap
      */
     public static function getOMClass($withPrefix = true)
     {
-        return $withPrefix ? CreditAccountTableMap::CLASS_DEFAULT : CreditAccountTableMap::OM_CLASS;
+        return $withPrefix ? CreditAccountExpirationTableMap::CLASS_DEFAULT : CreditAccountExpirationTableMap::OM_CLASS;
     }
 
     /**
@@ -256,21 +225,21 @@ class CreditAccountTableMap extends TableMap
      *
      * @throws PropelException Any exceptions caught during processing will be
      *         rethrown wrapped into a PropelException.
-     * @return array (CreditAccount object, last column rank)
+     * @return array (CreditAccountExpiration object, last column rank)
      */
     public static function populateObject($row, $offset = 0, $indexType = TableMap::TYPE_NUM)
     {
-        $key = CreditAccountTableMap::getPrimaryKeyHashFromRow($row, $offset, $indexType);
-        if (null !== ($obj = CreditAccountTableMap::getInstanceFromPool($key))) {
+        $key = CreditAccountExpirationTableMap::getPrimaryKeyHashFromRow($row, $offset, $indexType);
+        if (null !== ($obj = CreditAccountExpirationTableMap::getInstanceFromPool($key))) {
             // We no longer rehydrate the object, since this can cause data loss.
             // See http://www.propelorm.org/ticket/509
             // $obj->hydrate($row, $offset, true); // rehydrate
-            $col = $offset + CreditAccountTableMap::NUM_HYDRATE_COLUMNS;
+            $col = $offset + CreditAccountExpirationTableMap::NUM_HYDRATE_COLUMNS;
         } else {
-            $cls = CreditAccountTableMap::OM_CLASS;
+            $cls = CreditAccountExpirationTableMap::OM_CLASS;
             $obj = new $cls();
             $col = $obj->hydrate($row, $offset, false, $indexType);
-            CreditAccountTableMap::addInstanceToPool($obj, $key);
+            CreditAccountExpirationTableMap::addInstanceToPool($obj, $key);
         }
 
         return array($obj, $col);
@@ -293,8 +262,8 @@ class CreditAccountTableMap extends TableMap
         $cls = static::getOMClass(false);
         // populate the object(s)
         while ($row = $dataFetcher->fetch()) {
-            $key = CreditAccountTableMap::getPrimaryKeyHashFromRow($row, 0, $dataFetcher->getIndexType());
-            if (null !== ($obj = CreditAccountTableMap::getInstanceFromPool($key))) {
+            $key = CreditAccountExpirationTableMap::getPrimaryKeyHashFromRow($row, 0, $dataFetcher->getIndexType());
+            if (null !== ($obj = CreditAccountExpirationTableMap::getInstanceFromPool($key))) {
                 // We no longer rehydrate the object, since this can cause data loss.
                 // See http://www.propelorm.org/ticket/509
                 // $obj->hydrate($row, 0, true); // rehydrate
@@ -303,7 +272,7 @@ class CreditAccountTableMap extends TableMap
                 $obj = new $cls();
                 $obj->hydrate($row);
                 $results[] = $obj;
-                CreditAccountTableMap::addInstanceToPool($obj, $key);
+                CreditAccountExpirationTableMap::addInstanceToPool($obj, $key);
             } // if key exists
         }
 
@@ -324,17 +293,15 @@ class CreditAccountTableMap extends TableMap
     public static function addSelectColumns(Criteria $criteria, $alias = null)
     {
         if (null === $alias) {
-            $criteria->addSelectColumn(CreditAccountTableMap::ID);
-            $criteria->addSelectColumn(CreditAccountTableMap::AMOUNT);
-            $criteria->addSelectColumn(CreditAccountTableMap::CUSTOMER_ID);
-            $criteria->addSelectColumn(CreditAccountTableMap::CREATED_AT);
-            $criteria->addSelectColumn(CreditAccountTableMap::UPDATED_AT);
+            $criteria->addSelectColumn(CreditAccountExpirationTableMap::ID);
+            $criteria->addSelectColumn(CreditAccountExpirationTableMap::CREDIT_ACCOUNT_ID);
+            $criteria->addSelectColumn(CreditAccountExpirationTableMap::EXPIRATION_START);
+            $criteria->addSelectColumn(CreditAccountExpirationTableMap::EXPIRATION_DELAY);
         } else {
             $criteria->addSelectColumn($alias . '.ID');
-            $criteria->addSelectColumn($alias . '.AMOUNT');
-            $criteria->addSelectColumn($alias . '.CUSTOMER_ID');
-            $criteria->addSelectColumn($alias . '.CREATED_AT');
-            $criteria->addSelectColumn($alias . '.UPDATED_AT');
+            $criteria->addSelectColumn($alias . '.CREDIT_ACCOUNT_ID');
+            $criteria->addSelectColumn($alias . '.EXPIRATION_START');
+            $criteria->addSelectColumn($alias . '.EXPIRATION_DELAY');
         }
     }
 
@@ -347,7 +314,7 @@ class CreditAccountTableMap extends TableMap
      */
     public static function getTableMap()
     {
-        return Propel::getServiceContainer()->getDatabaseMap(CreditAccountTableMap::DATABASE_NAME)->getTable(CreditAccountTableMap::TABLE_NAME);
+        return Propel::getServiceContainer()->getDatabaseMap(CreditAccountExpirationTableMap::DATABASE_NAME)->getTable(CreditAccountExpirationTableMap::TABLE_NAME);
     }
 
     /**
@@ -355,16 +322,16 @@ class CreditAccountTableMap extends TableMap
      */
     public static function buildTableMap()
     {
-      $dbMap = Propel::getServiceContainer()->getDatabaseMap(CreditAccountTableMap::DATABASE_NAME);
-      if (!$dbMap->hasTable(CreditAccountTableMap::TABLE_NAME)) {
-        $dbMap->addTableObject(new CreditAccountTableMap());
+      $dbMap = Propel::getServiceContainer()->getDatabaseMap(CreditAccountExpirationTableMap::DATABASE_NAME);
+      if (!$dbMap->hasTable(CreditAccountExpirationTableMap::TABLE_NAME)) {
+        $dbMap->addTableObject(new CreditAccountExpirationTableMap());
       }
     }
 
     /**
-     * Performs a DELETE on the database, given a CreditAccount or Criteria object OR a primary key value.
+     * Performs a DELETE on the database, given a CreditAccountExpiration or Criteria object OR a primary key value.
      *
-     * @param mixed               $values Criteria or CreditAccount object or primary key or array of primary keys
+     * @param mixed               $values Criteria or CreditAccountExpiration object or primary key or array of primary keys
      *              which is used to create the DELETE statement
      * @param ConnectionInterface $con the connection to use
      * @return int The number of affected rows (if supported by underlying database driver).  This includes CASCADE-related rows
@@ -375,25 +342,25 @@ class CreditAccountTableMap extends TableMap
      public static function doDelete($values, ConnectionInterface $con = null)
      {
         if (null === $con) {
-            $con = Propel::getServiceContainer()->getWriteConnection(CreditAccountTableMap::DATABASE_NAME);
+            $con = Propel::getServiceContainer()->getWriteConnection(CreditAccountExpirationTableMap::DATABASE_NAME);
         }
 
         if ($values instanceof Criteria) {
             // rename for clarity
             $criteria = $values;
-        } elseif ($values instanceof \CreditAccount\Model\CreditAccount) { // it's a model object
+        } elseif ($values instanceof \CreditAccount\Model\CreditAccountExpiration) { // it's a model object
             // create criteria based on pk values
             $criteria = $values->buildPkeyCriteria();
         } else { // it's a primary key, or an array of pks
-            $criteria = new Criteria(CreditAccountTableMap::DATABASE_NAME);
-            $criteria->add(CreditAccountTableMap::ID, (array) $values, Criteria::IN);
+            $criteria = new Criteria(CreditAccountExpirationTableMap::DATABASE_NAME);
+            $criteria->add(CreditAccountExpirationTableMap::ID, (array) $values, Criteria::IN);
         }
 
-        $query = CreditAccountQuery::create()->mergeWith($criteria);
+        $query = CreditAccountExpirationQuery::create()->mergeWith($criteria);
 
-        if ($values instanceof Criteria) { CreditAccountTableMap::clearInstancePool();
+        if ($values instanceof Criteria) { CreditAccountExpirationTableMap::clearInstancePool();
         } elseif (!is_object($values)) { // it's a primary key, or an array of pks
-            foreach ((array) $values as $singleval) { CreditAccountTableMap::removeInstanceFromPool($singleval);
+            foreach ((array) $values as $singleval) { CreditAccountExpirationTableMap::removeInstanceFromPool($singleval);
             }
         }
 
@@ -401,20 +368,20 @@ class CreditAccountTableMap extends TableMap
     }
 
     /**
-     * Deletes all rows from the credit_account table.
+     * Deletes all rows from the credit_account_expiration table.
      *
      * @param ConnectionInterface $con the connection to use
      * @return int The number of affected rows (if supported by underlying database driver).
      */
     public static function doDeleteAll(ConnectionInterface $con = null)
     {
-        return CreditAccountQuery::create()->doDeleteAll($con);
+        return CreditAccountExpirationQuery::create()->doDeleteAll($con);
     }
 
     /**
-     * Performs an INSERT on the database, given a CreditAccount or Criteria object.
+     * Performs an INSERT on the database, given a CreditAccountExpiration or Criteria object.
      *
-     * @param mixed               $criteria Criteria or CreditAccount object containing data that is used to create the INSERT statement.
+     * @param mixed               $criteria Criteria or CreditAccountExpiration object containing data that is used to create the INSERT statement.
      * @param ConnectionInterface $con the ConnectionInterface connection to use
      * @return mixed           The new primary key.
      * @throws PropelException Any exceptions caught during processing will be
@@ -423,22 +390,22 @@ class CreditAccountTableMap extends TableMap
     public static function doInsert($criteria, ConnectionInterface $con = null)
     {
         if (null === $con) {
-            $con = Propel::getServiceContainer()->getWriteConnection(CreditAccountTableMap::DATABASE_NAME);
+            $con = Propel::getServiceContainer()->getWriteConnection(CreditAccountExpirationTableMap::DATABASE_NAME);
         }
 
         if ($criteria instanceof Criteria) {
             $criteria = clone $criteria; // rename for clarity
         } else {
-            $criteria = $criteria->buildCriteria(); // build Criteria from CreditAccount object
+            $criteria = $criteria->buildCriteria(); // build Criteria from CreditAccountExpiration object
         }
 
-        if ($criteria->containsKey(CreditAccountTableMap::ID) && $criteria->keyContainsValue(CreditAccountTableMap::ID) ) {
-            throw new PropelException('Cannot insert a value for auto-increment primary key ('.CreditAccountTableMap::ID.')');
+        if ($criteria->containsKey(CreditAccountExpirationTableMap::ID) && $criteria->keyContainsValue(CreditAccountExpirationTableMap::ID) ) {
+            throw new PropelException('Cannot insert a value for auto-increment primary key ('.CreditAccountExpirationTableMap::ID.')');
         }
 
 
         // Set the correct dbName
-        $query = CreditAccountQuery::create()->mergeWith($criteria);
+        $query = CreditAccountExpirationQuery::create()->mergeWith($criteria);
 
         try {
             // use transaction because $criteria could contain info
@@ -454,7 +421,7 @@ class CreditAccountTableMap extends TableMap
         return $pk;
     }
 
-} // CreditAccountTableMap
+} // CreditAccountExpirationTableMap
 // This is the static code needed to register the TableMap for this table with the main Propel class.
 //
-CreditAccountTableMap::buildTableMap();
+CreditAccountExpirationTableMap::buildTableMap();

@@ -12,6 +12,9 @@
 
 namespace CreditAccount;
 
+use CreditAccount\Model\CreditAccountExpirationQuery;
+use CreditAccount\Model\CreditAccountQuery;
+use CreditAccount\Model\CreditAmountHistoryQuery;
 use Propel\Runtime\Connection\ConnectionInterface;
 use Thelia\Core\Template\TemplateDefinition;
 use Thelia\Install\Database;
@@ -25,9 +28,28 @@ class CreditAccount extends BaseModule
 
     public function postActivation(ConnectionInterface $con = null)
     {
-        $database = new Database($con->getWrappedConnection());
+        $database = new Database($con);
 
-        $database->insertSql(null, [__DIR__ . '/Config/thelia.sql']);
+        try {
+            CreditAccountQuery::create()
+                ->find();
+        } catch (\Exception $exception) {
+            $database->insertSql(null, [__DIR__ . "/Config/sql/credit_account.sql"]);
+        }
+
+        try {
+            CreditAccountExpirationQuery::create()
+                ->find();
+        } catch (\Exception $exception) {
+            $database->insertSql(null, [__DIR__ . "/Config/sql/credit_account_expiration.sql"]);
+        }
+
+        try {
+            CreditAmountHistoryQuery::create()
+                ->find();
+        } catch (\Exception $exception) {
+            $database->insertSql(null, [__DIR__ . "/Config/sql/credit_amount_history.sql"]);
+        }
     }
 
     /**

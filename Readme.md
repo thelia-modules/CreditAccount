@@ -40,6 +40,13 @@ You have to put the hook in the `order-invoice.html` template file, just before 
 {hook name='order-invoice.before-discount'}
 ```
 
+## Expiration
+Since version 1.3.0 of this module you can enable expiration of credit.   
+Just go in the CreditAccount configuration end enable it (it's disabled by default) then you can choose the expiration delay (in months).   
+The date of expiration is computed with the last date of creditation + your expiration delay.  
+Expiration is checked each time the customer add an item in cart but if you want you can set this a command as cron to force expiration check `php Thelia creditaccount:expiration:check`.
+
+
 ### Hooks
 
 The module uses the front office `account.bottom` hook to display account history in the customer "My Account" page.

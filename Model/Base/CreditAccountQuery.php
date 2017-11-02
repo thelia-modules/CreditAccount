@@ -42,6 +42,10 @@ use Propel\Runtime\Exception\PropelException;
  * @method     ChildCreditAccountQuery rightJoinCustomer($relationAlias = null) Adds a RIGHT JOIN clause to the query using the Customer relation
  * @method     ChildCreditAccountQuery innerJoinCustomer($relationAlias = null) Adds a INNER JOIN clause to the query using the Customer relation
  *
+ * @method     ChildCreditAccountQuery leftJoinCreditAccountExpiration($relationAlias = null) Adds a LEFT JOIN clause to the query using the CreditAccountExpiration relation
+ * @method     ChildCreditAccountQuery rightJoinCreditAccountExpiration($relationAlias = null) Adds a RIGHT JOIN clause to the query using the CreditAccountExpiration relation
+ * @method     ChildCreditAccountQuery innerJoinCreditAccountExpiration($relationAlias = null) Adds a INNER JOIN clause to the query using the CreditAccountExpiration relation
+ *
  * @method     ChildCreditAccountQuery leftJoinCreditAmountHistory($relationAlias = null) Adds a LEFT JOIN clause to the query using the CreditAmountHistory relation
  * @method     ChildCreditAccountQuery rightJoinCreditAmountHistory($relationAlias = null) Adds a RIGHT JOIN clause to the query using the CreditAmountHistory relation
  * @method     ChildCreditAccountQuery innerJoinCreditAmountHistory($relationAlias = null) Adds a INNER JOIN clause to the query using the CreditAmountHistory relation
@@ -521,6 +525,79 @@ abstract class CreditAccountQuery extends ModelCriteria
         return $this
             ->joinCustomer($relationAlias, $joinType)
             ->useQuery($relationAlias ? $relationAlias : 'Customer', '\CreditAccount\Model\Thelia\Model\CustomerQuery');
+    }
+
+    /**
+     * Filter the query by a related \CreditAccount\Model\CreditAccountExpiration object
+     *
+     * @param \CreditAccount\Model\CreditAccountExpiration|ObjectCollection $creditAccountExpiration  the related object to use as filter
+     * @param string $comparison Operator to use for the column comparison, defaults to Criteria::EQUAL
+     *
+     * @return ChildCreditAccountQuery The current query, for fluid interface
+     */
+    public function filterByCreditAccountExpiration($creditAccountExpiration, $comparison = null)
+    {
+        if ($creditAccountExpiration instanceof \CreditAccount\Model\CreditAccountExpiration) {
+            return $this
+                ->addUsingAlias(CreditAccountTableMap::ID, $creditAccountExpiration->getCreditAccountId(), $comparison);
+        } elseif ($creditAccountExpiration instanceof ObjectCollection) {
+            return $this
+                ->useCreditAccountExpirationQuery()
+                ->filterByPrimaryKeys($creditAccountExpiration->getPrimaryKeys())
+                ->endUse();
+        } else {
+            throw new PropelException('filterByCreditAccountExpiration() only accepts arguments of type \CreditAccount\Model\CreditAccountExpiration or Collection');
+        }
+    }
+
+    /**
+     * Adds a JOIN clause to the query using the CreditAccountExpiration relation
+     *
+     * @param     string $relationAlias optional alias for the relation
+     * @param     string $joinType Accepted values are null, 'left join', 'right join', 'inner join'
+     *
+     * @return ChildCreditAccountQuery The current query, for fluid interface
+     */
+    public function joinCreditAccountExpiration($relationAlias = null, $joinType = Criteria::LEFT_JOIN)
+    {
+        $tableMap = $this->getTableMap();
+        $relationMap = $tableMap->getRelation('CreditAccountExpiration');
+
+        // create a ModelJoin object for this join
+        $join = new ModelJoin();
+        $join->setJoinType($joinType);
+        $join->setRelationMap($relationMap, $this->useAliasInSQL ? $this->getModelAlias() : null, $relationAlias);
+        if ($previousJoin = $this->getPreviousJoin()) {
+            $join->setPreviousJoin($previousJoin);
+        }
+
+        // add the ModelJoin to the current object
+        if ($relationAlias) {
+            $this->addAlias($relationAlias, $relationMap->getRightTable()->getName());
+            $this->addJoinObject($join, $relationAlias);
+        } else {
+            $this->addJoinObject($join, 'CreditAccountExpiration');
+        }
+
+        return $this;
+    }
+
+    /**
+     * Use the CreditAccountExpiration relation CreditAccountExpiration object
+     *
+     * @see useQuery()
+     *
+     * @param     string $relationAlias optional alias for the relation,
+     *                                   to be used as main alias in the secondary query
+     * @param     string $joinType Accepted values are null, 'left join', 'right join', 'inner join'
+     *
+     * @return   \CreditAccount\Model\CreditAccountExpirationQuery A secondary query class using the current class as primary query
+     */
+    public function useCreditAccountExpirationQuery($relationAlias = null, $joinType = Criteria::LEFT_JOIN)
+    {
+        return $this
+            ->joinCreditAccountExpiration($relationAlias, $joinType)
+            ->useQuery($relationAlias ? $relationAlias : 'CreditAccountExpiration', '\CreditAccount\Model\CreditAccountExpirationQuery');
     }
 
     /**

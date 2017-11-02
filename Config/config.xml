@@ -12,7 +12,12 @@
 
     <forms>
         <form name="credit_account_form" class="CreditAccount\Form\CreditAccountForm" />
+        <form name="creditaccount_configuration_form" class="CreditAccount\Form\ConfigurationForm" />
     </forms>
+
+    <commands>
+        <command class="CreditAccount\Command\CreditExpiration" />
+    </commands>
 
     <hooks>
         <hook id="creditaccount.customer.hook" class="CreditAccount\Hook\HookManager" scope="request">
@@ -31,6 +36,7 @@
         <service id="creditAccount_listener" class="CreditAccount\EventListeners\CreditEventListener" scope="request">
             <argument type="service" id="request"/>
             <argument type="service" id="thelia.translator"/>
+            <argument type="service" id="event_dispatcher"/>
             <tag name="kernel.event_subscriber"/>
         </service>
     </services>
