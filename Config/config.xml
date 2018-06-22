@@ -13,6 +13,7 @@
     <forms>
         <form name="credit_account_form" class="CreditAccount\Form\CreditAccountForm" />
         <form name="creditaccount_configuration_form" class="CreditAccount\Form\ConfigurationForm" />
+        <form name="credit_account_order_amount" class="CreditAccount\Form\CreditAccountOrderAmountForm" />
     </forms>
 
     <commands>

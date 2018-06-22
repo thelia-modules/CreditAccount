@@ -18,16 +18,20 @@ use CreditAccount\Model\CreditAccountExpiration;
 use CreditAccount\Model\CreditAccountExpirationQuery;
 use CreditAccount\Model\CreditAccountQuery;
 use CreditAccount\Model\CreditAccount as CreditAccountModel;
+use CreditAccount\Model\CreditAmountHistory;
 use CreditAccount\Model\CreditAmountHistoryQuery;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Thelia\Core\Event\ActionEvent;
 use Thelia\Core\Event\Cart\CartEvent;
 use Thelia\Core\Event\Coupon\CouponConsumeEvent;
 use Thelia\Core\Event\Order\OrderEvent;
 use Thelia\Core\Event\TheliaEvents;
 use Thelia\Core\HttpFoundation\Request;
 use Thelia\Core\Translation\Translator;
+use Thelia\Model\CouponQuery;
 use Thelia\Model\CustomerQuery;
+use Thelia\Model\Order;
 
 
 /**
@@ -66,6 +70,10 @@ class CreditEventListener implements EventSubscriberInterface
         $this->dispatcher = $dispatcher;
     }
 
+    /**
+     * @param CreditAccountEvent $event
+     * @throws \Propel\Runtime\Exception\PropelException
+     */
     public function addAmount(CreditAccountEvent $event)
     {
         $customer = $event->getCustomer();
@@ -86,6 +94,10 @@ class CreditEventListener implements EventSubscriberInterface
         $event->setCreditAccount($creditAccount);
     }
 
+    /**
+     * @param CreditAccountEvent $event
+     * @throws \Propel\Runtime\Exception\PropelException
+     */
     public function updateOrCreateExpiration(CreditAccountEvent $event)
     {
         if (CreditAccount::getConfigValue('expiration_enabled', false) && $event->getAmount() > 0) {
@@ -100,52 +112,85 @@ class CreditEventListener implements EventSubscriberInterface
         }
     }
 
+    /**
+     * @param OrderEvent $event
+     * @throws \Propel\Runtime\Exception\PropelException
+     */
     public function verifyCreditUsage(OrderEvent $event)
     {
         $session = $this->request->getSession();
 
-        if ($session->get('creditAccount.used') == 1) {
+        $amount = $session->get('creditAccount.used');
+        if ($amount > 0) {
             $customer = $event->getOrder()->getCustomer();
-            $amount = $session->get('creditAccount.amount');
 
             $creditEvent = new CreditAccountEvent($customer, ($amount*-1), $event->getOrder()->getId());
 
+            /** @noinspection PhpTranslationKeyInspection */
             $creditEvent
                 ->setWhoDidIt(Translator::getInstance()->trans('Customer', [], CreditAccount::DOMAIN))
                 ->setOrderId($event->getOrder()->getId())
             ;
 
-            $event->getDispatcher()->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $creditEvent);
+            $this->dispatcher->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $creditEvent);
 
             $session->set('creditAccount.used', 0);
-            $session->set('creditAccount.amount', 0);
         }
     }
 
+    /**
+     * @param CouponConsumeEvent $event
+     * @throws \Exception
+     */
     public function verifyCoupon(CouponConsumeEvent $event)
     {
         $session = $this->request->getSession();
-        if ($session->get('creditAccount.used') == 1) {
-            $event->stopPropagation();
-            $message = $this->translator->trans("You can't use both coupon and credit", array(), "creditaccount");
-            throw new \Exception($message);
+        $couponQuery = CouponQuery::create();
+        /** @noinspection PhpParamsInspection */
+        $coupon = $couponQuery->findOneByCode($event->getCode());
+        if ($session->get('creditAccount.used') > 0 && !$coupon->getIsCumulative()) {
+          //remove credit in order
+            $order = $session->getOrder();
+            $this->removeOrderCredit($order);
         }
     }
 
+    /**
+     * @param Order $order
+     * @param ActionEvent $event
+     * @throws \Propel\Runtime\Exception\PropelException
+     */
+    public function removeOrderCredit(Order $order)
+    {
+        /** @var CreditAmountHistory[] $haveCredits */
+        /** @noinspection PhpParamsInspection */
+        $haveCredits = CreditAmountHistoryQuery::create()
+            ->findByOrderId($order->getId());
+
+        /** @var CreditAmountHistory $haveCredit */
+        foreach ($haveCredits as $haveCredit) {
+            $creditEvent = new CreditAccountEvent($order->getCustomer(), -($haveCredit->getAmount()), $order->getId());
+            $this->dispatcher->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $creditEvent);
+        }
+    }
+
+    /**
+     * @param OrderEvent $event
+     * @throws \Propel\Runtime\Exception\PropelException
+     */
     public function updateCreditOnCancel(OrderEvent $event)
     {
         $order = $event->getOrder();
         if ($order->isCancelled()) {
-            $haveCredits = CreditAmountHistoryQuery::create()
-                ->findByOrderId($order->getId());
-
-            foreach ($haveCredits as $haveCredit) {
-                $creditEvent = new CreditAccountEvent($order->getCustomer(), -($haveCredit->getAmount()), $order->getId());
-                $event->getDispatcher()->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $creditEvent);
-            }
+            $this->removeOrderCredit($order);
         }
     }
 
+    /**
+     * @param CartEvent $event
+     * @throws \Propel\Runtime\Exception\PropelException
+     * @throws \Exception
+     */
     public function checkCreditExpiration(CartEvent $event)
     {
         $customerId  = $event->getCart()->getCustomerId();
@@ -175,9 +220,11 @@ class CreditEventListener implements EventSubscriberInterface
         $now = new \DateTime();
 
         if ($now > $expirationDate) {
+            /** @noinspection PhpParamsInspection */
             $customer = CustomerQuery::create()
                 ->findOneById($customerId);
 
+            /** @noinspection PhpParamsInspection */
             $creditAccount = CreditAccountQuery::create()
                 ->findOneByCustomerId($customer->getId());
 

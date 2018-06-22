@@ -16,6 +16,10 @@
         <default key="_controller">CreditAccount\Controller\Admin\CreditAccountAdminController::addAmount</default>
     </route>
 
+    <route id="creditAccount.useAmountInOrder" path="creditAccount/order/amount">
+        <default key="_controller">CreditAccount\Controller\Front\CreditAccountFrontController::useAmountInOrder</default>
+    </route>
+
     <route id="creditAccount.useAmount" path="creditAccount/use">
         <default key="_controller">CreditAccount\Controller\Front\CreditAccountFrontController::useAmount</default>
     </route>

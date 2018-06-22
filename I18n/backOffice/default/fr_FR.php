@@ -5,6 +5,7 @@ return array(
     'Configure' => 'Configuration',
     'CreditAccount configuration' => 'Configuration de CreditAccount',
     'CreditAccount module configuration' => 'Configuration du module CreditAccount',
+    'Current status of credit accounts' => 'Etat actuel des crédits des comptes',
     'Customer' => 'Client',
     'Customer credit account usage for this order' => 'Utilisation du compte crédit sur cette commande',
     'Expiration is checked each time the customer add an item in cart but if you want you can set this command as cron to force expiration check :' => 'L\'expiration est vérifiée dès que le client ajoute un produit à son panier mais si vous voulez vous pouvez forcer la vérification en ajoutant cette commande dans un cron :',
