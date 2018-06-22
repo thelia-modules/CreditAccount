@@ -12,14 +12,15 @@
 
 namespace CreditAccount\Controller\Front;
 
+use CreditAccount\CreditAccountManager;
 use CreditAccount\Model\CreditAccountQuery;
 use Front\Front;
 use Thelia\Controller\Front\BaseFrontController;
 use Thelia\Core\Translation\Translator;
 use Thelia\Coupon\CouponManager;
-use Thelia\Coupon\Type\CouponAbstract;
 use Thelia\Log\Tlog;
 use Thelia\Model\Customer;
+use Thelia\TaxEngine\TaxEngine;
 
 /**
  * Class CreditAccountFrontController
@@ -35,23 +36,10 @@ class CreditAccountFrontController extends BaseFrontController
     public function cancelUsage()
     {
         $this->checkAuth();
-
-        $usedAmount = $this->getSession()->get('creditAccount.used', 0);
-        if (0 < $usedAmount) {
-            if ($usedAmount > 0) {
-                $cart = $this->getSession()->getSessionCart($this->getDispatcher());
-                $order = $this->getSession()->getOrder();
-
-                $order->setDiscount($order->getDiscount() - $usedAmount);
-
-                $cart
-                    ->setDiscount($cart->getDiscount() - $usedAmount)
-                    ->save();
-
-                $this->getSession()->set('creditAccount.used', 0);
-            }
-        }
-
+        /** @var CreditAccountManager $creditAccountManager */
+        /** @noinspection MissingService */
+        $creditAccountManager = $this->container->get('creditaccount.manager');
+        $creditAccountManager->removeCreditDiscountFromCartAndOrder($this->getSession(), $this->getDispatcher());
         return $this->generateRedirectFromRoute('order.invoice');
     }
 
@@ -70,15 +58,21 @@ class CreditAccountFrontController extends BaseFrontController
         $creditAccount = CreditAccountQuery::create()
             ->findOneByCustomerId($customer->getId());
         $creditDiscount = $creditAccount->getAmount();
-        $this->applyCreditDiscountInOrder($creditDiscount);
-
+        /** @var CouponManager $couponManager */
+        $couponManager = $this->container->get('thelia.coupon.manager');
+        /** @var CreditAccountManager $creditAccountManager */
+        $creditAccountManager = $this->container->get('creditaccount.manager');
+        /** @var TaxEngine $taxEngine */
+        $taxEngine = $this->container->get('thelia.taxEngine');
+        $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $couponManager, $taxEngine, $this->getSession(), $this->getDispatcher());
         return $this->generateRedirectFromRoute('order.invoice');
     }
 
     /**
      * @return \Symfony\Component\HttpFoundation\Response
+     * @throws \Exception
      */
-    public function useAmountInOrder()
+    public function useAmountInCart()
     {
         $this->checkAuth();
         $this->checkCartNotEmpty();
@@ -90,11 +84,12 @@ class CreditAccountFrontController extends BaseFrontController
         $creditAccount = CreditAccountQuery::create()
             ->findOneByCustomerId($customer->getId());
 
-        $orderAmountForm = $this->createForm("credit_account_order_amount");
+        $orderAmountForm = $this->createForm("credit_account_amount_form");
 
         try {
             $form = $this->validateForm($orderAmountForm, 'post');
-            $creditDiscount = $form->get('order-credit-account-amount')->getData();
+            $creditDiscount = $form->get('credit-account-amount')->getData();
+            $force = $form->get('credit-account-force')->getData();
 
             if ($creditDiscount > $creditAccount->getAmount()) {
                 $amountLabel = money_format("%n", $creditAccount->getAmount());
@@ -108,13 +103,18 @@ class CreditAccountFrontController extends BaseFrontController
                 );
             }
 
-            $this->applyCreditDiscountInOrder($creditDiscount);
+            /** @var CouponManager $couponManager */
+            $couponManager = $this->container->get('thelia.coupon.manager');
+            /** @var CreditAccountManager $creditAccountManager */
+            $creditAccountManager = $this->container->get('creditaccount.manager');
+            /** @var TaxEngine $taxEngine */
+            $taxEngine = $this->container->get('thelia.taxEngine');
+            $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $couponManager, $taxEngine, $this->getSession(), $this->getDispatcher(), $force);
 
         } catch (\Exception $e) {
             Tlog::getInstance()->error(
                 sprintf("Error while setting account credit to order : %s", $e->getMessage())
             );
-
             $orderAmountForm->setErrorMessage($e->getMessage());
 
             $this->getParserContext()
@@ -127,58 +127,14 @@ class CreditAccountFrontController extends BaseFrontController
     }
 
     /**
-     * @param $creditDiscountWanted
+     * @return \Symfony\Component\HttpFoundation\Response
      * @throws \Propel\Runtime\Exception\PropelException
-     * @throws \Exception
      */
-    private function applyCreditDiscountInOrder($creditDiscountWanted) {
-        if ($creditDiscountWanted <= 0) {
-            return;
-        }
-
-        /** @var CouponManager $couponManager */
-        /** @noinspection MissingService */
-        $couponManager = $this->container->get('thelia.coupon.manager');
-
-        $couponUsedArray = $couponManager->getCouponsKept();
-
-        $cart = $this->getSession()->getSessionCart($this->getDispatcher());
-        /** @noinspection MissingService */
-        /** @noinspection CaseSensitivityServiceInspection */
-        $taxCountry = $this->container->get('thelia.taxEngine')->getDeliveryCountry();
-        /** @noinspection MissingService */
-        $taxState = $this->container->get('thelia.taxEngine')->getDeliveryState();
-        $totalCart = $cart->getTaxedAmount($taxCountry, false, $taxState);
-
-        if (!empty($couponUsedArray)) {
-            $couponManager->clear();
-            $this->getSession()->setConsumedCoupons([]);
-            /**
-             * @var  $index int
-             * @var  $coupon CouponAbstract
-             */
-            foreach ($couponUsedArray as $index => $coupon) {
-                if ($coupon->isCumulative()) {
-                    $couponManager->pushCouponInSession($coupon->getCode());
-                }
-            }
-        }
-        $couponDiscount = $couponManager->getDiscount();
-
-        if ($creditDiscountWanted + $couponDiscount > $totalCart) {
-            $creditDiscountWanted = max(0, $totalCart - $couponDiscount);
-        }
-
-        $discountCart = $creditDiscountWanted + $couponDiscount;
-
-        $order = $this->getSession()->getOrder();
-        $order->setDiscount($discountCart);
-
-        //update cart
-        $cart->setDiscount($discountCart);
-        $cart->save();
-
-        //update session
-        $this->getSession()->set('creditAccount.used', $creditDiscountWanted);
+    public function removeAmountFromCart()
+    {
+        /** @var CreditAccountManager $creditAccountManager */
+        $creditAccountManager = $this->container->get('creditaccount.manager');
+        $creditAccountManager->removeCreditDiscountFromCartAndOrder($this->getSession(), $this->getDispatcher());
+        return $this->generateRedirectFromRoute('cart.view');
     }
 }

@@ -12,6 +12,7 @@
 
 namespace CreditAccount\Loop;
 
+use CreditAccount\CreditAccountManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Thelia\Core\Template\Element\ArraySearchLoopInterface;
 use Thelia\Core\Template\Element\BaseLoop;
@@ -30,12 +31,15 @@ class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
 {
     /** @var CouponManager  */
     private $couponManager;
+    /** @var CreditAccountManager  */
+    private $creditAccountManager;
 
     public function __construct(ContainerInterface $container)
     {
         parent::__construct($container);
         /** @noinspection MissingService */
         $this->couponManager = $this->container->get('thelia.coupon.manager');
+        $this->creditAccountManager = $this->container->get('creditaccount.manager');
     }
 
     protected function getArgDefinitions()
@@ -46,12 +50,13 @@ class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
     public function parseResults(LoopResult $loopResult)
     {
         if ($loopResult->getResultDataCollectionCount() > 0) {
+            $session = $this->getCurrentRequest()->getSession();
             $loopResultRow = new LoopResultRow();
 
             $loopResultRow->set('CREDIT_COUPONS_AMOUNT', $this->couponManager->getDiscount());
             $loopResult->addRow($loopResultRow);
 
-            $creditUsed = $this->request->getSession()->get('creditAccount.used', 0);
+            $creditUsed = $this->creditAccountManager->getDiscount($session);
             $loopResultRow->set('CREDIT_ACCOUNT_AMOUNT', $creditUsed);
             $loopResult->addRow($loopResultRow);
         }
@@ -67,10 +72,10 @@ class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
      */
     public function buildArray()
     {
-        $sesssion = $this->getCurrentRequest()->getSession();
+        $session = $this->getCurrentRequest()->getSession();
         if (
-            $sesssion->get('creditAccount.used', 0) > 0 ||
-            !empty($sesssion->getConsumedCoupons())
+            $this->creditAccountManager->getDiscount($session) > 0 ||
+            !empty($session->getConsumedCoupons())
         ) {
             // Call parseResults once.
             return [ 'hey ! parseResults !' ];

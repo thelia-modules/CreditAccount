@@ -13,6 +13,7 @@
 namespace CreditAccount\EventListeners;
 
 use CreditAccount\CreditAccount;
+use CreditAccount\CreditAccountManager;
 use CreditAccount\Event\CreditAccountEvent;
 use CreditAccount\Model\CreditAccountExpiration;
 use CreditAccount\Model\CreditAccountExpirationQuery;
@@ -20,6 +21,7 @@ use CreditAccount\Model\CreditAccountQuery;
 use CreditAccount\Model\CreditAccount as CreditAccountModel;
 use CreditAccount\Model\CreditAmountHistory;
 use CreditAccount\Model\CreditAmountHistoryQuery;
+use Front\Front;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Thelia\Core\Event\ActionEvent;
@@ -57,16 +59,22 @@ class CreditEventListener implements EventSubscriberInterface
      * @var EventDispatcherInterface
      */
     protected $dispatcher;
+    private $creditAccountManager;
 
     /**
      * @param Request $request
      * @param Translator $translator
      * @param EventDispatcherInterface $dispatcher
      */
-    public function __construct(Request $request, Translator $translator, EventDispatcherInterface $dispatcher)
+    public function __construct(
+        Request $request,
+        Translator $translator,
+        CreditAccountManager $creditAccountManager,
+        EventDispatcherInterface $dispatcher)
     {
         $this->request = $request;
         $this->translator = $translator;
+        $this->creditAccountManager = $creditAccountManager;
         $this->dispatcher = $dispatcher;
     }
 
@@ -119,8 +127,7 @@ class CreditEventListener implements EventSubscriberInterface
     public function verifyCreditUsage(OrderEvent $event)
     {
         $session = $this->request->getSession();
-
-        $amount = $session->get('creditAccount.used');
+        $amount = $this->creditAccountManager->getDiscount($session);
         if ($amount > 0) {
             $customer = $event->getOrder()->getCustomer();
 
@@ -134,7 +141,7 @@ class CreditEventListener implements EventSubscriberInterface
 
             $this->dispatcher->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $creditEvent);
 
-            $session->set('creditAccount.used', 0);
+            $this->creditAccountManager->setDiscount($session,0);
         }
     }
 
@@ -148,10 +155,11 @@ class CreditEventListener implements EventSubscriberInterface
         $couponQuery = CouponQuery::create();
         /** @noinspection PhpParamsInspection */
         $coupon = $couponQuery->findOneByCode($event->getCode());
-        if ($session->get('creditAccount.used') > 0 && !$coupon->getIsCumulative()) {
-          //remove credit in order
-            $order = $session->getOrder();
-            $this->removeOrderCredit($order);
+        if ($this->creditAccountManager->getDiscount($session) > 0 && !$coupon->getIsCumulative()) {
+            /** @noinspection PhpTranslationKeyInspection */
+            throw new \Exception(
+                 Translator::getInstance()->trans("The coupon %s is not cumulative. Please remove other discount(s)", ['%s' => $coupon->getCode()], Front::MESSAGE_DOMAIN)
+             );
         }
     }
 

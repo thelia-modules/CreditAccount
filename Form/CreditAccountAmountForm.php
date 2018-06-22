@@ -12,14 +12,14 @@ namespace CreditAccount\Form;
 use Symfony\Component\Validator\Constraints;
 use Thelia\Form\BaseForm;
 
-class CreditAccountOrderAmountForm  extends BaseForm
+class CreditAccountAmountForm  extends BaseForm
 {
 
     protected function buildForm()
     {
         $this->formBuilder
             ->add(
-                "order-credit-account-amount",
+                "credit-account-amount",
                 "text",
                 [
                     "required"    => true,
@@ -27,6 +27,13 @@ class CreditAccountOrderAmountForm  extends BaseForm
                         new Constraints\NotBlank()
                     ]
                 ]
+            )
+            ->add(
+                "credit-account-force",
+                "checkbox",
+                //if force setting credit in case there is a
+                // non cumulative promo code, set to true
+                ['required' => false]
             )
         ;
     }

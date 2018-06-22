@@ -10,6 +10,6 @@ return array(
     'Error' => 'Erreur',
     'Expiration delay (in months)' => 'Délai d\'expiration (en mois)',
     'No' => 'Non',
+    'The coupon %s is not cumulative. Please remove other discount(s)' => 'Le coupon %s n\'est pas cumulable avec d\'autres remises. Veuillez retirer les autres.	',
     'Yes' => 'Oui',
-    'You can\'t use both coupon and credit' => 'Vous ne pouvez pas utiliser un coupon en plus de votre crédit.',
 );

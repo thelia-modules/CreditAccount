@@ -13,7 +13,7 @@
     <forms>
         <form name="credit_account_form" class="CreditAccount\Form\CreditAccountForm" />
         <form name="creditaccount_configuration_form" class="CreditAccount\Form\ConfigurationForm" />
-        <form name="credit_account_order_amount" class="CreditAccount\Form\CreditAccountOrderAmountForm" />
+        <form name="credit_account_amount_form" class="CreditAccount\Form\CreditAccountAmountForm" />
     </forms>
 
     <commands>
@@ -37,8 +37,12 @@
         <service id="creditAccount_listener" class="CreditAccount\EventListeners\CreditEventListener" scope="request">
             <argument type="service" id="request"/>
             <argument type="service" id="thelia.translator"/>
+            <argument type="service" id="creditaccount.manager"/>
             <argument type="service" id="event_dispatcher"/>
             <tag name="kernel.event_subscriber"/>
+        </service>
+        <service id="creditaccount.manager" class="CreditAccount\CreditAccountManager">
+            <argument type="service" id="service_container" />
         </service>
     </services>
 </config>
