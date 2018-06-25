@@ -103,13 +103,9 @@ class CreditAccountFrontController extends BaseFrontController
                 );
             }
 
-            /** @var CouponManager $couponManager */
-            $couponManager = $this->container->get('thelia.coupon.manager');
             /** @var CreditAccountManager $creditAccountManager */
             $creditAccountManager = $this->container->get('creditaccount.manager');
-            /** @var TaxEngine $taxEngine */
-            $taxEngine = $this->container->get('thelia.taxEngine');
-            $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $couponManager, $taxEngine, $this->getSession(), $this->getDispatcher(), $force);
+            $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $this->getSession(), $this->getDispatcher(), $force);
 
         } catch (\Exception $e) {
             Tlog::getInstance()->error(

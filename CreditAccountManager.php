@@ -31,6 +31,18 @@ class CreditAccountManager
      */
     const SESSION_KEY_CREDIT_ACCOUNT_USED = 'creditAccount.used';
 
+    /** @var CouponManager $couponManager */
+    private $couponManager;
+
+    /** @var TaxEngine $taxEngine */
+    private $taxEngine;
+
+    public function __construct(CouponManager $couponManager, TaxEngine $taxEngine)
+    {
+        $this->couponManager = $couponManager;
+        $this->taxEngine = $taxEngine;
+    }
+
     /**
      * @param Session $session
      * @param EventDispatcherInterface $dispatcher
@@ -52,13 +64,14 @@ class CreditAccountManager
 
     /**
      * @param $creditDiscountWanted int
+     * @param Session $session
+     * @param EventDispatcher $dispatcher
+     * @param bool $force
      * @throws \Propel\Runtime\Exception\PropelException
      * @throws \Exception
      */
     public function applyCreditDiscountInCartAndOrder(
         $creditDiscountWanted,
-        CouponManager $couponManager,
-        TaxEngine $taxEngine,
         Session $session,
         EventDispatcher $dispatcher,
         $force = true
@@ -68,14 +81,14 @@ class CreditAccountManager
         {
             return;
         }
-        $couponUsedArray = $couponManager->getCouponsKept();
+        $couponUsedArray = $this->couponManager->getCouponsKept();
 
         $cart = $session->getSessionCart($dispatcher);
         /** @noinspection MissingService */
         /** @noinspection CaseSensitivityServiceInspection */
-        $taxCountry = $taxEngine->getDeliveryCountry();
+        $taxCountry = $this->taxEngine->getDeliveryCountry();
         /** @noinspection MissingService */
-        $taxState = $taxEngine->getDeliveryState();
+        $taxState = $this->taxEngine->getDeliveryState();
         $totalCart = $cart->getTaxedAmount($taxCountry, false, $taxState);
 
         if (!empty($couponUsedArray)) {
@@ -92,12 +105,17 @@ class CreditAccountManager
                     unset($consumedCoupons[$coupon->getCode()]);
                 } else {
                     /** @noinspection PhpTranslationKeyInspection */
-                    throw new \Exception( Translator::getInstance()->trans("The coupon %s is not cumulative. Please remove other discount(s)", ['%s' => $coupon->getCode()], Front::MESSAGE_DOMAIN), 449);
+                    throw new \Exception(
+                        Translator::getInstance()->trans(
+                            "The coupon %s is not cumulative. Please remove other discount(s)",
+                            ['%s' => $coupon->getCode()],
+                            Front::MESSAGE_DOMAIN),
+                        449);
                 }
             }
             $session->setConsumedCoupons($consumedCoupons);
         }
-        $couponDiscount = $couponManager->getDiscount();
+        $couponDiscount = $this->couponManager->getDiscount();
 
         if ($creditDiscountWanted + $couponDiscount > $totalCart) {
             $creditDiscountWanted = max(0, $totalCart - $couponDiscount);

@@ -43,7 +43,8 @@
             <tag name="kernel.event_subscriber"/>
         </service>
         <service id="creditaccount.manager" class="CreditAccount\CreditAccountManager">
-            <argument type="service" id="service_container" />
+            <argument type="service" id="thelia.coupon.manager"/>
+            <argument type="service" id="thelia.taxEngine"/>
         </service>
     </services>
 </config>
