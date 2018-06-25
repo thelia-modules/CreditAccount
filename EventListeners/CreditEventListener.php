@@ -31,6 +31,7 @@ use Thelia\Core\Event\Order\OrderEvent;
 use Thelia\Core\Event\TheliaEvents;
 use Thelia\Core\HttpFoundation\Request;
 use Thelia\Core\Translation\Translator;
+use Thelia\Coupon\CouponManager;
 use Thelia\Model\CouponQuery;
 use Thelia\Model\CustomerQuery;
 use Thelia\Model\Order;
@@ -59,7 +60,16 @@ class CreditEventListener implements EventSubscriberInterface
      * @var EventDispatcherInterface
      */
     protected $dispatcher;
+
+    /**
+     * @var CreditAccountManager
+     */
     private $creditAccountManager;
+
+    /**
+     * @var CouponManager
+     */
+    private $couponManager;
 
     /**
      * @param Request $request
@@ -70,11 +80,13 @@ class CreditEventListener implements EventSubscriberInterface
         Request $request,
         Translator $translator,
         CreditAccountManager $creditAccountManager,
+        CouponManager $couponManager,
         EventDispatcherInterface $dispatcher)
     {
         $this->request = $request;
         $this->translator = $translator;
         $this->creditAccountManager = $creditAccountManager;
+        $this->couponManager = $couponManager;
         $this->dispatcher = $dispatcher;
     }
 
@@ -155,7 +167,7 @@ class CreditEventListener implements EventSubscriberInterface
         $couponQuery = CouponQuery::create();
         /** @noinspection PhpParamsInspection */
         $coupon = $couponQuery->findOneByCode($event->getCode());
-        if ($this->creditAccountManager->getDiscount($session) > 0 && !$coupon->getIsCumulative()) {
+        if (($this->creditAccountManager->getDiscount($session) > 0 || $this->couponManager->getDiscount() > 0) && !$coupon->getIsCumulative()) {
             /** @noinspection PhpTranslationKeyInspection */
             throw new \Exception(
                  Translator::getInstance()->trans("The coupon %s is not cumulative. Please remove other discount(s)", ['%s' => $coupon->getCode()], Front::MESSAGE_DOMAIN)
