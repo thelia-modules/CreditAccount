@@ -12,15 +12,14 @@
 
 namespace CreditAccount\Loop;
 
-use CreditAccount\Model\CreditAccount;
-use CreditAccount\Model\CreditAccountQuery;
+use CreditAccount\CreditAccountManager;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Thelia\Core\Template\Element\ArraySearchLoopInterface;
 use Thelia\Core\Template\Element\BaseLoop;
 use Thelia\Core\Template\Element\LoopResult;
 use Thelia\Core\Template\Element\LoopResultRow;
-use Thelia\Core\Template\Element\PropelSearchLoopInterface;
-use Thelia\Core\Template\Loop\Argument\Argument;
 use Thelia\Core\Template\Loop\Argument\ArgumentCollection;
+use Thelia\Coupon\CouponManager;
 
 
 /**
@@ -30,6 +29,19 @@ use Thelia\Core\Template\Loop\Argument\ArgumentCollection;
  */
 class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
 {
+    /** @var CouponManager  */
+    private $couponManager;
+    /** @var CreditAccountManager  */
+    private $creditAccountManager;
+
+    public function __construct(ContainerInterface $container)
+    {
+        parent::__construct($container);
+        /** @noinspection MissingService */
+        $this->couponManager = $this->container->get('thelia.coupon.manager');
+        $this->creditAccountManager = $this->container->get('creditaccount.manager');
+    }
+
     protected function getArgDefinitions()
     {
         return new ArgumentCollection();
@@ -38,22 +50,14 @@ class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
     public function parseResults(LoopResult $loopResult)
     {
         if ($loopResult->getResultDataCollectionCount() > 0) {
+            $session = $this->getCurrentRequest()->getSession();
             $loopResultRow = new LoopResultRow();
 
-            $resCollection = $loopResult->getResultDataCollection();
+            $loopResultRow->set('CREDIT_COUPONS_AMOUNT', $this->couponManager->getDiscount());
+            $loopResult->addRow($loopResultRow);
 
-            if ($resCollection[0] === "coupon") {
-                $loopResultRow
-                    ->set('AMOUNT_USED', 'coupon')
-                ;
-                $loopResult->addRow($loopResultRow);
-                return $loopResult;
-            }
-
-            $loopResultRow
-                ->set('AMOUNT_USED', $this->request->getSession()->get('creditAccount.amount', 0))
-            ;
-
+            $creditUsed = $this->creditAccountManager->getDiscount($session);
+            $loopResultRow->set('CREDIT_ACCOUNT_AMOUNT', $creditUsed);
             $loopResult->addRow($loopResultRow);
         }
 
@@ -68,13 +72,11 @@ class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
      */
     public function buildArray()
     {
-        $couponCredit = $this->request->getSession()->get('thelia.consumed_coupons');
-        
-        if (!empty($couponCredit)) {
-            return ['coupon'];
-        }
-
-        if (0 != $this->request->getSession()->get('creditAccount.used', 0)) {
+        $session = $this->getCurrentRequest()->getSession();
+        if (
+            $this->creditAccountManager->getDiscount($session) > 0 ||
+            !empty($session->getConsumedCoupons())
+        ) {
             // Call parseResults once.
             return [ 'hey ! parseResults !' ];
         }

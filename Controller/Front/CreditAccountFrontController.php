@@ -12,8 +12,15 @@
 
 namespace CreditAccount\Controller\Front;
 
+use CreditAccount\CreditAccountManager;
 use CreditAccount\Model\CreditAccountQuery;
+use Front\Front;
 use Thelia\Controller\Front\BaseFrontController;
+use Thelia\Core\Translation\Translator;
+use Thelia\Coupon\CouponManager;
+use Thelia\Log\Tlog;
+use Thelia\Model\Customer;
+use Thelia\TaxEngine\TaxEngine;
 
 /**
  * Class CreditAccountFrontController
@@ -22,31 +29,24 @@ use Thelia\Controller\Front\BaseFrontController;
  */
 class CreditAccountFrontController extends BaseFrontController
 {
+    /**
+     * @return \Symfony\Component\HttpFoundation\Response
+     * @throws \Propel\Runtime\Exception\PropelException
+     */
     public function cancelUsage()
     {
         $this->checkAuth();
-
-        if (0 !== $this->getSession()->get('creditAccount.used', 0)) {
-            $usedAmount = $this->getSession()->get('creditAccount.amount', 0);
-
-            if ($usedAmount > 0) {
-                $cart = $this->getSession()->getSessionCart($this->getDispatcher());
-                $order = $this->getSession()->getOrder();
-
-                $order->setDiscount($order->getDiscount() - $usedAmount);
-
-                $cart
-                    ->setDiscount($cart->getDiscount() - $usedAmount)
-                    ->save();
-
-                $this->getSession()->set('creditAccount.used', 0);
-                $this->getSession()->set('creditAccount.amount', 0);
-            }
-        }
-
+        /** @var CreditAccountManager $creditAccountManager */
+        /** @noinspection MissingService */
+        $creditAccountManager = $this->container->get('creditaccount.manager');
+        $creditAccountManager->removeCreditDiscountFromCartAndOrder($this->getSession(), $this->getDispatcher());
         return $this->generateRedirectFromRoute('order.invoice');
     }
 
+    /**
+     * @return \Symfony\Component\HttpFoundation\Response
+     * @throws \Propel\Runtime\Exception\PropelException
+     */
     public function useAmount()
     {
         $this->checkAuth();
@@ -54,36 +54,83 @@ class CreditAccountFrontController extends BaseFrontController
 
         $customer = $this->getSecurityContext()->getCustomerUser();
 
+        /** @noinspection PhpParamsInspection */
         $creditAccount = CreditAccountQuery::create()
             ->findOneByCustomerId($customer->getId());
-        $creditUsed = $this->getSession()->get('creditAccount.used');
-        $couponUsed = $this->getSession()->get('thelia.consumed_coupons');
-        $couponUsedFlag = empty($couponUsed);
+        $creditDiscount = $creditAccount->getAmount();
+        /** @var CouponManager $couponManager */
+        $couponManager = $this->container->get('thelia.coupon.manager');
+        /** @var CreditAccountManager $creditAccountManager */
+        $creditAccountManager = $this->container->get('creditaccount.manager');
+        /** @var TaxEngine $taxEngine */
+        $taxEngine = $this->container->get('thelia.taxEngine');
+        $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $couponManager, $taxEngine, $this->getSession(), $this->getDispatcher());
+        return $this->generateRedirectFromRoute('order.invoice');
+    }
 
-        if ($creditAccount->getAmount() > 0 && $creditUsed !== 1 && $couponUsedFlag !==1) {
-            $cart = $this->getSession()->getSessionCart($this->getDispatcher());
-            $order = $this->getSession()->getOrder();
-            $taxCountry = $this->container->get('thelia.taxEngine')->getDeliveryCountry();
+    /**
+     * @return \Symfony\Component\HttpFoundation\Response
+     * @throws \Exception
+     */
+    public function useAmountInCart()
+    {
+        $this->checkAuth();
+        $this->checkCartNotEmpty();
 
-            $total = $cart->getTaxedAmount($taxCountry);
+        /** @var Customer $customer */
+        $customer = $this->getSecurityContext()->getCustomerUser();
 
-            $totalDiscount = $creditAccount->getAmount();
+        /** @noinspection PhpParamsInspection */
+        $creditAccount = CreditAccountQuery::create()
+            ->findOneByCustomerId($customer->getId());
 
-            if ($totalDiscount > $total) {
-                $totalDiscount = $total;
+        $orderAmountForm = $this->createForm("credit_account_amount_form");
+
+        try {
+            $form = $this->validateForm($orderAmountForm, 'post');
+            $creditDiscount = $form->get('credit-account-amount')->getData();
+            $force = $form->get('credit-account-force')->getData();
+
+            if ($creditDiscount > $creditAccount->getAmount()) {
+                $amountLabel = money_format("%n", $creditAccount->getAmount());
+                /** @noinspection PhpTranslationKeyInspection */
+                throw new \Exception(
+                        Translator::getInstance()->trans(
+                            "Amount too high. You credit amount is : ",
+                            [],
+                            Front::MESSAGE_DOMAIN
+                        ) . $amountLabel
+                );
             }
 
-            $order
-                ->setDiscount($totalDiscount);
+            /** @var CreditAccountManager $creditAccountManager */
+            $creditAccountManager = $this->container->get('creditaccount.manager');
+            $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $this->getSession(), $this->getDispatcher(), $force);
 
-            $cart
-                ->setDiscount($cart->getDiscount() + $totalDiscount)
-                ->save();
+        } catch (\Exception $e) {
+            Tlog::getInstance()->error(
+                sprintf("Error while setting account credit to order : %s", $e->getMessage())
+            );
+            $orderAmountForm->setErrorMessage($e->getMessage());
 
-            $this->getSession()->set('creditAccount.used', 1);
-            $this->getSession()->set('creditAccount.amount', $totalDiscount);
+            $this->getParserContext()
+                ->addForm($orderAmountForm)
+                ->setGeneralError($e->getMessage());
+            return $this->generateErrorRedirect($orderAmountForm);
         }
 
-        return $this->generateRedirectFromRoute('order.invoice');
+        return $this->generateSuccessRedirect($orderAmountForm);
+    }
+
+    /**
+     * @return \Symfony\Component\HttpFoundation\Response
+     * @throws \Propel\Runtime\Exception\PropelException
+     */
+    public function removeAmountFromCart()
+    {
+        /** @var CreditAccountManager $creditAccountManager */
+        $creditAccountManager = $this->container->get('creditaccount.manager');
+        $creditAccountManager->removeCreditDiscountFromCartAndOrder($this->getSession(), $this->getDispatcher());
+        return $this->generateRedirectFromRoute('cart.view');
     }
 }
