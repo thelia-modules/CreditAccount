@@ -58,13 +58,9 @@ class CreditAccountFrontController extends BaseFrontController
         $creditAccount = CreditAccountQuery::create()
             ->findOneByCustomerId($customer->getId());
         $creditDiscount = $creditAccount->getAmount();
-        /** @var CouponManager $couponManager */
-        $couponManager = $this->container->get('thelia.coupon.manager');
         /** @var CreditAccountManager $creditAccountManager */
         $creditAccountManager = $this->container->get('creditaccount.manager');
-        /** @var TaxEngine $taxEngine */
-        $taxEngine = $this->container->get('thelia.taxEngine');
-        $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $couponManager, $taxEngine, $this->getSession(), $this->getDispatcher());
+        $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $this->getSession(), $this->getDispatcher());
         return $this->generateRedirectFromRoute('order.invoice');
     }
 
