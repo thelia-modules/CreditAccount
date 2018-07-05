@@ -59,7 +59,7 @@ class CreditAccountManager
         $order->setDiscount($order->getDiscount() - $usedAmount);
         $cart->setDiscount($cart->getDiscount() - $usedAmount);
         $cart->save();
-        $this->setDiscount($session, 0);
+        $this->setDiscount($session, $dispatcher, 0);
     }
 
     /**
@@ -131,12 +131,18 @@ class CreditAccountManager
         $cart->save();
 
         //update session
-        $this->setDiscount($session, $creditDiscountWanted);
+        $this->setDiscount($session, $dispatcher, $creditDiscountWanted);
     }
 
-    public function setDiscount(Session $session, $creditDiscountWanted)
+    /**
+     * @param $session Session
+     * @param $dispatcher EventDispatcherInterface
+     * @param $creditDiscountWanted
+     */
+    public function setDiscount($session, $dispatcher, $creditDiscountWanted)
     {
         $session->set(self::SESSION_KEY_CREDIT_ACCOUNT_USED, $creditDiscountWanted);
+        $dispatcher->dispatch(CreditAccount::CREDIT_ACCOUNT_USED);
     }
 
     public function getDiscount(Session $session)
