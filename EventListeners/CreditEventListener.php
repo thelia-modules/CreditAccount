@@ -15,16 +15,15 @@ namespace CreditAccount\EventListeners;
 use CreditAccount\CreditAccount;
 use CreditAccount\CreditAccountManager;
 use CreditAccount\Event\CreditAccountEvent;
+use CreditAccount\Model\CreditAccount as CreditAccountModel;
 use CreditAccount\Model\CreditAccountExpiration;
 use CreditAccount\Model\CreditAccountExpirationQuery;
 use CreditAccount\Model\CreditAccountQuery;
-use CreditAccount\Model\CreditAccount as CreditAccountModel;
 use CreditAccount\Model\CreditAmountHistory;
 use CreditAccount\Model\CreditAmountHistoryQuery;
 use Front\Front;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Thelia\Core\Event\ActionEvent;
 use Thelia\Core\Event\Cart\CartEvent;
 use Thelia\Core\Event\Coupon\CouponConsumeEvent;
 use Thelia\Core\Event\Order\OrderEvent;
@@ -74,6 +73,8 @@ class CreditEventListener implements EventSubscriberInterface
     /**
      * @param Request $request
      * @param Translator $translator
+     * @param CreditAccountManager $creditAccountManager
+     * @param CouponManager $couponManager
      * @param EventDispatcherInterface $dispatcher
      */
     public function __construct(
@@ -153,7 +154,7 @@ class CreditEventListener implements EventSubscriberInterface
 
             $this->dispatcher->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $creditEvent);
 
-            $this->creditAccountManager->setDiscount($session,0);
+            $this->creditAccountManager->setDiscount($session, 0, $this->dispatcher);
         }
     }
 
@@ -177,7 +178,6 @@ class CreditEventListener implements EventSubscriberInterface
 
     /**
      * @param Order $order
-     * @param ActionEvent $event
      * @throws \Propel\Runtime\Exception\PropelException
      */
     public function removeOrderCredit(Order $order)

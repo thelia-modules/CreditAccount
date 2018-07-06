@@ -24,7 +24,15 @@ class CreditAccount extends BaseModule
 {
     const DOMAIN = 'creditaccount';
 
+    /**
+     * event send when credit account change
+     */
     const CREDIT_ACCOUNT_ADD_AMOUNT = 'creditAccount.addAccount';
+
+    /**
+     * Sent when credit account used change
+     */
+    const CREDIT_ACCOUNT_USED = 'creditAccount.used.change';
 
     public function postActivation(ConnectionInterface $con = null)
     {

@@ -15,6 +15,7 @@ use Thelia\Core\HttpFoundation\Session\Session;
 use Thelia\Core\Translation\Translator;
 use Thelia\Coupon\CouponManager;
 use Thelia\Coupon\Type\CouponAbstract;
+use Thelia\Model\Exception\InvalidArgumentException;
 use Thelia\TaxEngine\TaxEngine;
 
 /**
@@ -59,7 +60,7 @@ class CreditAccountManager
         $order->setDiscount($order->getDiscount() - $usedAmount);
         $cart->setDiscount($cart->getDiscount() - $usedAmount);
         $cart->save();
-        $this->setDiscount($session, 0);
+        $this->setDiscount($session, 0, $dispatcher);
     }
 
     /**
@@ -131,12 +132,24 @@ class CreditAccountManager
         $cart->save();
 
         //update session
-        $this->setDiscount($session, $creditDiscountWanted);
+        $this->setDiscount($session, $creditDiscountWanted, $dispatcher);
     }
 
-    public function setDiscount(Session $session, $creditDiscountWanted)
+    /**
+     * @param Session $session
+     * @param $creditDiscountWanted
+     * @param EventDispatcherInterface $dispatcher
+     */
+    public function setDiscount(
+        Session $session,
+        $creditDiscountWanted,
+        EventDispatcherInterface $dispatcher = null)
     {
         $session->set(self::SESSION_KEY_CREDIT_ACCOUNT_USED, $creditDiscountWanted);
+        if (empty($dispatcher)) {
+            throw new InvalidArgumentException("dispatcher must be passed");
+        }
+        $dispatcher->dispatch(CreditAccount::CREDIT_ACCOUNT_USED);
     }
 
     public function getDiscount(Session $session)

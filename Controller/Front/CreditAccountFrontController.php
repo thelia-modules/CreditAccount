@@ -17,10 +17,8 @@ use CreditAccount\Model\CreditAccountQuery;
 use Front\Front;
 use Thelia\Controller\Front\BaseFrontController;
 use Thelia\Core\Translation\Translator;
-use Thelia\Coupon\CouponManager;
 use Thelia\Log\Tlog;
 use Thelia\Model\Customer;
-use Thelia\TaxEngine\TaxEngine;
 
 /**
  * Class CreditAccountFrontController
@@ -58,13 +56,9 @@ class CreditAccountFrontController extends BaseFrontController
         $creditAccount = CreditAccountQuery::create()
             ->findOneByCustomerId($customer->getId());
         $creditDiscount = $creditAccount->getAmount();
-        /** @var CouponManager $couponManager */
-        $couponManager = $this->container->get('thelia.coupon.manager');
         /** @var CreditAccountManager $creditAccountManager */
         $creditAccountManager = $this->container->get('creditaccount.manager');
-        /** @var TaxEngine $taxEngine */
-        $taxEngine = $this->container->get('thelia.taxEngine');
-        $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $couponManager, $taxEngine, $this->getSession(), $this->getDispatcher());
+        $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $this->getSession(), $this->getDispatcher());
         return $this->generateRedirectFromRoute('order.invoice');
     }
 
@@ -91,8 +85,8 @@ class CreditAccountFrontController extends BaseFrontController
             $creditDiscount = $form->get('credit-account-amount')->getData();
             $force = $form->get('credit-account-force')->getData();
 
-            if ($creditDiscount > $creditAccount->getAmount()) {
-                $amountLabel = money_format("%n", $creditAccount->getAmount());
+            if (empty($creditAccount) || $creditDiscount > $creditAccount->getAmount()) {
+                $amountLabel = money_format("%n", empty($creditAccount) ? 0 : $creditAccount->getAmount());
                 /** @noinspection PhpTranslationKeyInspection */
                 throw new \Exception(
                         Translator::getInstance()->trans(
