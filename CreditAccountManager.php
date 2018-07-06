@@ -136,9 +136,9 @@ class CreditAccountManager
     }
 
     /**
-     * @param $session Session
-     * @param $dispatcher EventDispatcherInterface
+     * @param Session $session
      * @param $creditDiscountWanted
+     * @param EventDispatcherInterface $dispatcher
      */
     public function setDiscount($session, $creditDiscountWanted, $dispatcher)
     {
