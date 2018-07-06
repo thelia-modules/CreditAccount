@@ -140,7 +140,10 @@ class CreditAccountManager
      * @param $creditDiscountWanted
      * @param EventDispatcherInterface $dispatcher
      */
-    public function setDiscount($session, $creditDiscountWanted, $dispatcher)
+    public function setDiscount(
+        Session $session,
+        $creditDiscountWanted,
+        EventDispatcherInterface $dispatcher = null)
     {
         $session->set(self::SESSION_KEY_CREDIT_ACCOUNT_USED, $creditDiscountWanted);
         if (empty($dispatcher)) {
