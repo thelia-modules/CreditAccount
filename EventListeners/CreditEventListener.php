@@ -154,7 +154,7 @@ class CreditEventListener implements EventSubscriberInterface
 
             $this->dispatcher->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $creditEvent);
 
-            $this->creditAccountManager->setDiscount($session, $this->dispatcher, 0);
+            $this->creditAccountManager->setDiscount($session, 0, $this->dispatcher);
         }
     }
 
