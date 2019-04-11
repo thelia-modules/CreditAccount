@@ -14,7 +14,6 @@ namespace CreditAccount\Controller\Front;
 
 use CreditAccount\CreditAccountManager;
 use CreditAccount\Model\CreditAccountQuery;
-use Front\Front;
 use Thelia\Controller\Front\BaseFrontController;
 use Thelia\Core\Translation\Translator;
 use Thelia\Log\Tlog;
@@ -92,7 +91,7 @@ class CreditAccountFrontController extends BaseFrontController
                         Translator::getInstance()->trans(
                             "Amount too high. You credit amount is : ",
                             [],
-                            Front::MESSAGE_DOMAIN
+                            CreditAccount::DOMAIN
                         ) . $amountLabel
                 );
             }

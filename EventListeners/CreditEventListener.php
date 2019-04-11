@@ -21,7 +21,6 @@ use CreditAccount\Model\CreditAccountExpirationQuery;
 use CreditAccount\Model\CreditAccountQuery;
 use CreditAccount\Model\CreditAmountHistory;
 use CreditAccount\Model\CreditAmountHistoryQuery;
-use Front\Front;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Thelia\Core\Event\Cart\CartEvent;
@@ -171,7 +170,7 @@ class CreditEventListener implements EventSubscriberInterface
         if (($this->creditAccountManager->getDiscount($session) > 0 || $this->couponManager->getDiscount() > 0) && !$coupon->getIsCumulative()) {
             /** @noinspection PhpTranslationKeyInspection */
             throw new \Exception(
-                 Translator::getInstance()->trans("The coupon %s is not cumulative. Please remove other discount(s)", ['%s' => $coupon->getCode()], Front::MESSAGE_DOMAIN)
+                 Translator::getInstance()->trans("The coupon %s is not cumulative. Please remove other discount(s)", ['%s' => $coupon->getCode()], CreditAccount::DOMAIN)
              );
         }
     }
