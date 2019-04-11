@@ -8,7 +8,6 @@
 
 namespace CreditAccount;
 
-use Front\Front;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Thelia\Core\HttpFoundation\Session\Session;
@@ -110,7 +109,7 @@ class CreditAccountManager
                         Translator::getInstance()->trans(
                             "The coupon %s is not cumulative. Please remove other discount(s)",
                             ['%s' => $coupon->getCode()],
-                            Front::MESSAGE_DOMAIN),
+                            CreditAccount::DOMAIN),
                         449);
                 }
             }
