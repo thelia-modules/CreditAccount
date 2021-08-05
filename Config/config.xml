@@ -34,17 +34,6 @@
     </hooks>
 
     <services>
-        <service id="creditAccount_listener" class="CreditAccount\EventListeners\CreditEventListener" scope="request">
-            <argument type="service" id="request"/>
-            <argument type="service" id="thelia.translator"/>
-            <argument type="service" id="creditaccount.manager"/>
-            <argument type="service" id="thelia.coupon.manager"/>
-            <argument type="service" id="event_dispatcher"/>
-            <tag name="kernel.event_subscriber"/>
-        </service>
-        <service id="creditaccount.manager" class="CreditAccount\CreditAccountManager">
-            <argument type="service" id="thelia.coupon.manager"/>
-            <argument type="service" id="thelia.taxEngine"/>
-        </service>
+        <service id="creditaccount.manager" alias="CreditAccount\CreditAccountManager" public="true"/>
     </services>
 </config>

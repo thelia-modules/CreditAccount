@@ -19,7 +19,7 @@
         {$usingCredit = 1}
         <tr>
             <th colspan="2" class="discount">
-                {intl l="You're using %amount from your credit account." amount={format_money number=$AMOUNT_USED symbol=$currencySymbol} d='creditaccount.fo.default'}
+                {intl l="You're using %amount from your credit account." amount={format_money number=$CREDIT_ACCOUNT_AMOUNT symbol=$currencySymbol} d='creditaccount.fo.default'}
                 <a class="btn btn-xs btn-warning" href="{url path="/creditAccount/cancel"}">{intl l='Cancel' d='creditaccount.fo.default'}</a>
             </th>
         </tr>

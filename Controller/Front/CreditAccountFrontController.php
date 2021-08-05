@@ -12,14 +12,22 @@
 
 namespace CreditAccount\Controller\Front;
 
+use CreditAccount\CreditAccount;
 use CreditAccount\CreditAccountManager;
+use CreditAccount\Form\CreditAccountAmountForm;
 use CreditAccount\Model\CreditAccountQuery;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Thelia\Controller\Front\BaseFrontController;
+use Thelia\Core\Security\SecurityContext;
+use Thelia\Core\Template\ParserContext;
 use Thelia\Core\Translation\Translator;
 use Thelia\Log\Tlog;
 use Thelia\Model\Customer;
+use Symfony\Component\Routing\Annotation\Route;
 
 /**
+ * @Route("/creditAccount", name="creditAccount_front")
  * Class CreditAccountFrontController
  * @package CreditAccount\Controller\Front
  * @author Manuel Raynaud <mraynaud@openstudio.fr>
@@ -29,63 +37,61 @@ class CreditAccountFrontController extends BaseFrontController
     /**
      * @return \Symfony\Component\HttpFoundation\Response
      * @throws \Propel\Runtime\Exception\PropelException
+     * @Route("/cancel", name="_cancel", methods="GET")
      */
-    public function cancelUsage()
+    public function cancelUsage(RequestStack $requestStack, EventDispatcherInterface $dispatcher, CreditAccountManager $creditAccountManager)
     {
         $this->checkAuth();
-        /** @var CreditAccountManager $creditAccountManager */
-        /** @noinspection MissingService */
-        $creditAccountManager = $this->container->get('creditaccount.manager');
-        $creditAccountManager->removeCreditDiscountFromCartAndOrder($this->getSession(), $this->getDispatcher());
+        $creditAccountManager->removeCreditDiscountFromCartAndOrder($requestStack->getCurrentRequest()->getSession(), $dispatcher);
         return $this->generateRedirectFromRoute('order.invoice');
     }
 
     /**
      * @return \Symfony\Component\HttpFoundation\Response
      * @throws \Propel\Runtime\Exception\PropelException
+     * @Route("/use", name="_useAmont", methods="GET")
      */
-    public function useAmount()
+    public function useAmount(EventDispatcherInterface $dispatcher, SecurityContext $securityContext, CreditAccountManager $creditAccountManager, RequestStack $requestStack)
     {
         $this->checkAuth();
-        $this->checkCartNotEmpty();
+        $this->checkCartNotEmpty($dispatcher);
 
-        $customer = $this->getSecurityContext()->getCustomerUser();
+        $customer = $securityContext->getCustomerUser();
 
         /** @noinspection PhpParamsInspection */
         $creditAccount = CreditAccountQuery::create()
             ->findOneByCustomerId($customer->getId());
         $creditDiscount = $creditAccount->getAmount();
-        /** @var CreditAccountManager $creditAccountManager */
-        $creditAccountManager = $this->container->get('creditaccount.manager');
-        $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $this->getSession(), $this->getDispatcher());
+        $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $requestStack->getSession(), $dispatcher);
         return $this->generateRedirectFromRoute('order.invoice');
     }
 
     /**
      * @return \Symfony\Component\HttpFoundation\Response
      * @throws \Exception
+     * @Route("/cart/add", name="_useAmontInOrder", methods="POST")
      */
-    public function useAmountInCart()
+    public function useAmountInCart(EventDispatcherInterface $dispatcher, SecurityContext $securityContext, CreditAccountManager $creditAccountManager, RequestStack $requestStack, ParserContext $parserContext)
     {
         $this->checkAuth();
-        $this->checkCartNotEmpty();
+        $this->checkCartNotEmpty($dispatcher);
 
         /** @var Customer $customer */
-        $customer = $this->getSecurityContext()->getCustomerUser();
+        $customer = $securityContext->getCustomerUser();
 
         /** @noinspection PhpParamsInspection */
         $creditAccount = CreditAccountQuery::create()
             ->findOneByCustomerId($customer->getId());
 
-        $orderAmountForm = $this->createForm("credit_account_amount_form");
+        $orderAmountForm = $this->createForm(CreditAccountAmountForm::getName());
 
         try {
             $form = $this->validateForm($orderAmountForm, 'post');
             $creditDiscount = $form->get('credit-account-amount')->getData();
             $force = $form->get('credit-account-force')->getData();
 
-            if (empty($creditAccount) || $creditDiscount > $creditAccount->getAmount()) {
-                $amountLabel = money_format("%n", empty($creditAccount) ? 0 : $creditAccount->getAmount());
+            if ($creditAccount === null || $creditDiscount > $creditAccount->getAmount()) {
+                $amountLabel = money_format("%n", $creditAccount === null ? 0 : $creditAccount->getAmount());
                 /** @noinspection PhpTranslationKeyInspection */
                 throw new \Exception(
                         Translator::getInstance()->trans(
@@ -95,10 +101,7 @@ class CreditAccountFrontController extends BaseFrontController
                         ) . $amountLabel
                 );
             }
-
-            /** @var CreditAccountManager $creditAccountManager */
-            $creditAccountManager = $this->container->get('creditaccount.manager');
-            $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $this->getSession(), $this->getDispatcher(), $force);
+            $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $requestStack->getSession(), $dispatcher, $force);
 
         } catch (\Exception $e) {
             Tlog::getInstance()->error(
@@ -106,7 +109,7 @@ class CreditAccountFrontController extends BaseFrontController
             );
             $orderAmountForm->setErrorMessage($e->getMessage());
 
-            $this->getParserContext()
+            $parserContext
                 ->addForm($orderAmountForm)
                 ->setGeneralError($e->getMessage());
             return $this->generateErrorRedirect($orderAmountForm);
@@ -118,12 +121,11 @@ class CreditAccountFrontController extends BaseFrontController
     /**
      * @return \Symfony\Component\HttpFoundation\Response
      * @throws \Propel\Runtime\Exception\PropelException
+     * @Route("/cart/remove", name="_removeAmont", methods="GET")
      */
-    public function removeAmountFromCart()
+    public function removeAmountFromCart(RequestStack $requestStack, EventDispatcherInterface $dispatcher, CreditAccountManager $creditAccountManager)
     {
-        /** @var CreditAccountManager $creditAccountManager */
-        $creditAccountManager = $this->container->get('creditaccount.manager');
-        $creditAccountManager->removeCreditDiscountFromCartAndOrder($this->getSession(), $this->getDispatcher());
+        $creditAccountManager->removeCreditDiscountFromCartAndOrder($requestStack->getSession(), $dispatcher);
         return $this->generateRedirectFromRoute('cart.view');
     }
 }

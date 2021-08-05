@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<database defaultIdMethod="native" name="thelia" namespace="CreditAccount\Model">
+<database defaultIdMethod="native" name="TheliaMain" namespace="CreditAccount\Model">
     <table name="credit_account">
         <column autoIncrement="true" name="id" primaryKey="true" required="true" type="INTEGER" />
         <column name="amount" type="FLOAT" default="0"/>

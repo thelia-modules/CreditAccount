@@ -9,6 +9,8 @@
 namespace CreditAccount\Form;
 
 
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Validator\Constraints;
 use Thelia\Form\BaseForm;
 
@@ -20,7 +22,7 @@ class CreditAccountAmountForm  extends BaseForm
         $this->formBuilder
             ->add(
                 "credit-account-amount",
-                "text",
+                TextType::class,
                 [
                     "required"    => true,
                     "constraints" => [
@@ -30,7 +32,7 @@ class CreditAccountAmountForm  extends BaseForm
             )
             ->add(
                 "credit-account-force",
-                "checkbox",
+                CheckboxType::class,
                 //if force setting credit in case there is a
                 // non cumulative promo code, set to true
                 ['required' => false]
@@ -38,7 +40,7 @@ class CreditAccountAmountForm  extends BaseForm
         ;
     }
 
-    public function getName()
+    public static function getName()
     {
         return "credit_account_order_amount";
     }

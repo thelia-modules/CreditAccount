@@ -23,6 +23,7 @@ use CreditAccount\Model\CreditAmountHistory;
 use CreditAccount\Model\CreditAmountHistoryQuery;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Thelia\Core\Event\Cart\CartEvent;
 use Thelia\Core\Event\Coupon\CouponConsumeEvent;
 use Thelia\Core\Event\Order\OrderEvent;
@@ -47,7 +48,7 @@ class CreditEventListener implements EventSubscriberInterface
     /**
      * @var \Thelia\Core\HttpFoundation\Request
      */
-    protected $request;
+    protected $requestStack;
 
     /**
      * @var \Thelia\Core\Translation\Translator
@@ -70,20 +71,21 @@ class CreditEventListener implements EventSubscriberInterface
     private $couponManager;
 
     /**
-     * @param Request $request
+     * CreditEventListener constructor.
+     * @param RequestStack $requestStack
      * @param Translator $translator
      * @param CreditAccountManager $creditAccountManager
      * @param CouponManager $couponManager
      * @param EventDispatcherInterface $dispatcher
      */
     public function __construct(
-        Request $request,
+        RequestStack $requestStack,
         Translator $translator,
         CreditAccountManager $creditAccountManager,
         CouponManager $couponManager,
         EventDispatcherInterface $dispatcher)
     {
-        $this->request = $request;
+        $this->requestStack = $requestStack;
         $this->translator = $translator;
         $this->creditAccountManager = $creditAccountManager;
         $this->couponManager = $couponManager;
@@ -120,7 +122,7 @@ class CreditEventListener implements EventSubscriberInterface
      */
     public function updateOrCreateExpiration(CreditAccountEvent $event)
     {
-        if (CreditAccount::getConfigValue('expiration_enabled', false) && $event->getAmount() > 0) {
+        if (CreditAccount::getConfigValue('expiration_enabled', false) === "true"  && $event->getAmount() > 0) {
             $creditAccountExpiration =  CreditAccountExpirationQuery::create()
                 ->filterByCreditAccountId($event->getCreditAccount()->getId())
                 ->findOneOrCreate();
@@ -138,7 +140,7 @@ class CreditEventListener implements EventSubscriberInterface
      */
     public function verifyCreditUsage(OrderEvent $event)
     {
-        $session = $this->request->getSession();
+        $session = $this->requestStack->getSession();
         $amount = $this->creditAccountManager->getDiscount($session);
         if ($amount > 0) {
             $customer = $event->getOrder()->getCustomer();
@@ -151,7 +153,7 @@ class CreditEventListener implements EventSubscriberInterface
                 ->setOrderId($event->getOrder()->getId())
             ;
 
-            $this->dispatcher->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $creditEvent);
+            $this->dispatcher->dispatch($creditEvent, CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT);
 
             $this->creditAccountManager->setDiscount($session, 0, $this->dispatcher);
         }
@@ -163,7 +165,7 @@ class CreditEventListener implements EventSubscriberInterface
      */
     public function verifyCoupon(CouponConsumeEvent $event)
     {
-        $session = $this->request->getSession();
+        $session = $this->requestStack->getSession();
         $couponQuery = CouponQuery::create();
         /** @noinspection PhpParamsInspection */
         $coupon = $couponQuery->findOneByCode($event->getCode());
@@ -189,7 +191,7 @@ class CreditEventListener implements EventSubscriberInterface
         /** @var CreditAmountHistory $haveCredit */
         foreach ($haveCredits as $haveCredit) {
             $creditEvent = new CreditAccountEvent($order->getCustomer(), -($haveCredit->getAmount()), $order->getId());
-            $this->dispatcher->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $creditEvent);
+            $this->dispatcher->dispatch($creditEvent, CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT);
         }
     }
 
@@ -247,9 +249,9 @@ class CreditEventListener implements EventSubscriberInterface
             $creditAccount = CreditAccountQuery::create()
                 ->findOneByCustomerId($customer->getId());
 
-            $event = new CreditAccountEvent($customer, -$creditAccount->getAmount());
+            $event = new CreditAccountEvent($customer, -($creditAccount->getAmount()));
             $event->setWhoDidIt("Expiration $expirationDelay months");
-            $this->dispatcher->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $event);
+            $this->dispatcher->dispatch($event, CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT);
 
             $creditExpiration->delete();
         }
