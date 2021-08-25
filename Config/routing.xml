@@ -4,7 +4,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
 
-    <route id="creditAccount.configuration.view" path="/admin/module/CreditAccount">
+    <!--<route id="creditAccount.configuration.view" path="/admin/module/CreditAccount">
         <default key="_controller">CreditAccount\Controller\Admin\ConfigurationController::viewAction</default>
     </route>
 
@@ -30,6 +30,6 @@
 
     <route id="creditAccount.cancelUsage" path="creditAccount/cancel">
         <default key="_controller">CreditAccount\Controller\Front\CreditAccountFrontController::cancelUsage</default>
-    </route>
+    </route>-->
 
 </routes>

@@ -13,6 +13,8 @@
 namespace CreditAccount\Form;
 
 use CreditAccount\CreditAccount;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Validator\Constraints\GreaterThan;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Thelia\Form\BaseForm;
@@ -29,7 +31,7 @@ class CreditAccountForm extends BaseForm
         $this->formBuilder
             ->add(
                 'amount',
-                'number',
+                NumberType::class,
                 [
                     'constraints' => [ new NotBlank() ],
                     'label' => $this->translator->trans('Add this amount to account', [], CreditAccount::DOMAIN),
@@ -40,7 +42,7 @@ class CreditAccountForm extends BaseForm
             )
             ->add(
                 'customer_id',
-                'hidden',
+                HiddenType::class,
                 [
                     'constraints' => [  new NotBlank(), new GreaterThan(['value' => 0]) ]
                 ]
@@ -51,7 +53,7 @@ class CreditAccountForm extends BaseForm
     /**
      * @return string the name of you form. This name must be unique
      */
-    public function getName()
+    public static function getName()
     {
         return 'credit_account';
     }

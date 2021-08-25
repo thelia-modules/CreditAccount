@@ -13,7 +13,11 @@
 namespace CreditAccount\Loop;
 
 use CreditAccount\CreditAccountManager;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Psr\Container\ContainerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Contracts\Translation\TranslatorInterface;
+use Thelia\Core\Security\SecurityContext;
 use Thelia\Core\Template\Element\ArraySearchLoopInterface;
 use Thelia\Core\Template\Element\BaseLoop;
 use Thelia\Core\Template\Element\LoopResult;
@@ -34,10 +38,9 @@ class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
     /** @var CreditAccountManager  */
     private $creditAccountManager;
 
-    public function __construct(ContainerInterface $container)
+    public function __construct(ContainerInterface $container, RequestStack $requestStack, EventDispatcherInterface $eventDispatcher, SecurityContext $securityContext, TranslatorInterface $translator, array $theliaParserLoops, $kernelEnvironment)
     {
-        parent::__construct($container);
-        /** @noinspection MissingService */
+        parent::__construct($container, $requestStack, $eventDispatcher, $securityContext, $translator, $theliaParserLoops, $kernelEnvironment);
         $this->couponManager = $this->container->get('thelia.coupon.manager');
         $this->creditAccountManager = $this->container->get('creditaccount.manager');
     }

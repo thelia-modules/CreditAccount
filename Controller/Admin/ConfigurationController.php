@@ -3,13 +3,21 @@
 namespace CreditAccount\Controller\Admin;
 
 use CreditAccount\CreditAccount;
+use CreditAccount\Form\ConfigurationForm;
 use Thelia\Controller\Admin\BaseAdminController;
 use Thelia\Core\Security\AccessManager;
 use Thelia\Core\Security\Resource\AdminResources;
 use Thelia\Core\Translation\Translator;
+use Symfony\Component\Routing\Annotation\Route;
 
+/**
+ * @Route("/admin/module/CreditAccount", name="creditAccount_configuration")
+ */
 class ConfigurationController extends BaseAdminController
 {
+    /**
+     * @Route("", name="_view", methods="GET")
+     */
     public function viewAction()
     {
         return $this->render(
@@ -20,13 +28,16 @@ class ConfigurationController extends BaseAdminController
         );
     }
 
+    /**
+     * @Route("/save", name="_save", methods="POST")
+     */
     public function saveAction()
     {
         if (null !== $response = $this->checkAuth([AdminResources::MODULE], 'CreditAccount', AccessManager::VIEW)) {
             return $response;
         }
 
-        $form = $this->createForm("creditaccount_configuration_form");
+        $form = $this->createForm(ConfigurationForm::getName());
 
         try {
             $data = $this->validateForm($form)->getData();

@@ -48,7 +48,7 @@ class CreditExpiration extends ContainerAwareCommand
 
                     $event = new CreditAccountEvent($customer, -$creditAccount->getAmount());
                     $event->setWhoDidIt("Expiration $expirationDelay months");
-                    $dispatcher->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $event);
+                    $dispatcher->dispatch($event, CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT);
 
                     $creditAccountExpiration->delete();
 

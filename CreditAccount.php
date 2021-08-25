@@ -16,6 +16,7 @@ use CreditAccount\Model\CreditAccountExpirationQuery;
 use CreditAccount\Model\CreditAccountQuery;
 use CreditAccount\Model\CreditAmountHistoryQuery;
 use Propel\Runtime\Connection\ConnectionInterface;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
 use Thelia\Core\Template\TemplateDefinition;
 use Thelia\Install\Database;
 use Thelia\Module\BaseModule;
@@ -34,7 +35,7 @@ class CreditAccount extends BaseModule
      */
     const CREDIT_ACCOUNT_USED = 'creditAccount.used.change';
 
-    public function postActivation(ConnectionInterface $con = null)
+    public function postActivation(ConnectionInterface $con = null): void
     {
         $database = new Database($con);
 
@@ -76,4 +77,13 @@ class CreditAccount extends BaseModule
             )
         );
     }
+
+    public static function configureServices(ServicesConfigurator $servicesConfigurator): void
+    {
+        $servicesConfigurator->load(self::getModuleCode().'\\', __DIR__)
+            ->exclude([THELIA_MODULE_DIR . ucfirst(self::getModuleCode()). "/I18n/*"])
+            ->autowire(true)
+            ->autoconfigure(true);
+    }
+
 }

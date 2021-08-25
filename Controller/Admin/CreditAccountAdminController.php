@@ -14,27 +14,34 @@ namespace CreditAccount\Controller\Admin;
 use CreditAccount\CreditAccount;
 use CreditAccount\Event\CreditAccountEvent;
 use CreditAccount\Form\CreditAccountForm;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Thelia\Controller\Admin\BaseAdminController;
 use Thelia\Core\Security\AccessManager;
 use Thelia\Core\Security\Resource\AdminResources;
+use Thelia\Core\Translation\Translator;
 use Thelia\Model\Admin;
 use Thelia\Model\CustomerQuery;
-
+use Symfony\Component\Routing\Annotation\Route;
 
 /**
+ * @Route("/admin/creditAccount", name="creditAccount")
  * Class CreditAccountAdminController
  * @package CreditAccount\Controller\Admin
  * @author Manuel Raynaud <mraynaud@openstudio.fr>
  */
 class CreditAccountAdminController extends BaseAdminController
 {
-    public function addAmount()
+    /**
+     * @Route("/add", name="_add", methods="POST")
+     */
+    public function addAmount(RequestStack $requestStack, EventDispatcherInterface $dispatcher)
     {
         if (null !== $response = $this->checkAuth(array(AdminResources::CUSTOMER), array('CreditAccount'), AccessManager::UPDATE)) {
             return $response;
         }
 
-        $form = new CreditAccountForm($this->getRequest());
+        $form = $this->createForm(CreditAccountForm::getName());
 
         try {
             $creditForm = $this->validateForm($form);
@@ -44,14 +51,14 @@ class CreditAccountAdminController extends BaseAdminController
             $event = new CreditAccountEvent($customer, $creditForm->get('amount')->getData());
 
             /** @var  Admin $admin */
-            $admin = $this->getSession()->getAdminUser();
+            $admin = $requestStack->getCurrentRequest()->getSession()->getAdminUser();
             $event->setWhoDidIt($admin->getFirstname() . " " . $admin->getLastname());
 
-            $this->dispatch(CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $event);
+            $dispatcher->dispatch($event, CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT);
 
         } catch (\Exception $ex) {
             $this->setupFormErrorContext(
-                $this->getTranslator()->trans("Add amount to credit account"),
+                Translator::getInstance()->trans("Add amount to credit account"),
                 $ex->getMessage(),
                 $form,
                 $ex

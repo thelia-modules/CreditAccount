@@ -8,8 +8,10 @@
 
 namespace CreditAccount;
 
+use CreditAccount\Event\CreditAccountEvent;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Thelia\Core\HttpFoundation\Session\Session;
 use Thelia\Core\Translation\Translator;
 use Thelia\Coupon\CouponManager;
@@ -44,11 +46,11 @@ class CreditAccountManager
     }
 
     /**
-     * @param Session $session
+     * @param SessionInterface $session
      * @param EventDispatcherInterface $dispatcher
      * @throws \Propel\Runtime\Exception\PropelException
      */
-    public function removeCreditDiscountFromCartAndOrder(Session $session, EventDispatcherInterface $dispatcher)
+    public function removeCreditDiscountFromCartAndOrder(SessionInterface $session, EventDispatcherInterface $dispatcher)
     {
         $usedAmount = $this->getDiscount($session);
         if ($usedAmount <= 0) {
@@ -72,8 +74,8 @@ class CreditAccountManager
      */
     public function applyCreditDiscountInCartAndOrder(
         $creditDiscountWanted,
-        Session $session,
-        EventDispatcher $dispatcher,
+        SessionInterface $session,
+        EventDispatcherInterface $dispatcher,
         $force = true
     )
     {
@@ -140,18 +142,19 @@ class CreditAccountManager
      * @param EventDispatcherInterface $dispatcher
      */
     public function setDiscount(
-        Session $session,
+        SessionInterface $session,
         $creditDiscountWanted,
         EventDispatcherInterface $dispatcher = null)
     {
         $session->set(self::SESSION_KEY_CREDIT_ACCOUNT_USED, $creditDiscountWanted);
-        if (empty($dispatcher)) {
+        if ($dispatcher === null) {
             throw new InvalidArgumentException("dispatcher must be passed");
         }
-        $dispatcher->dispatch(CreditAccount::CREDIT_ACCOUNT_USED);
+
+        $dispatcher->dispatch((new  CreditAccountEvent($session->getCustomerUser(), $creditDiscountWanted)),CreditAccount::CREDIT_ACCOUNT_USED);
     }
 
-    public function getDiscount(Session $session)
+    public function getDiscount(SessionInterface $session)
     {
         return $session->get(self::SESSION_KEY_CREDIT_ACCOUNT_USED, 0);
     }
