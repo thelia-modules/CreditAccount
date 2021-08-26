@@ -9,6 +9,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 
 use OpenApi\Controller\Front\BaseFrontOpenApiController;
 use Thelia\Core\HttpFoundation\JsonResponse;
+use Thelia\Tools\NumberFormat;
 
 /**
  * @Route("/creditaccount", name="creditaccount_api")
@@ -98,7 +99,9 @@ class FrontApiController extends BaseFrontOpenApiController
         }
         $amount = $this->getRequestValue("amount");
         $amountAvailable = $this->getAmout();
-        $amountLabel = money_format("%n", $amountAvailable);
+
+        $numberFormat = NumberFormat::getInstance($this->getRequest());
+        $amountLabel = $numberFormat->format($amountAvailable);
 
         if ($amount > $amountAvailable) {
             return $this->jsonResponse(
