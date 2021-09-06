@@ -38,26 +38,12 @@ class CreditAccount extends BaseModule
     public function postActivation(ConnectionInterface $con = null): void
     {
         $database = new Database($con);
-
-        try {
-            CreditAccountQuery::create()
-                ->find();
-        } catch (\Exception $exception) {
+        if (!self::getConfigValue('is_initialized', false)) {
+            $database->insertSql(null, [__DIR__ . "/Config/thelia.sql"]);
             $database->insertSql(null, [__DIR__ . "/Config/sql/credit_account.sql"]);
-        }
-
-        try {
-            CreditAccountExpirationQuery::create()
-                ->find();
-        } catch (\Exception $exception) {
             $database->insertSql(null, [__DIR__ . "/Config/sql/credit_account_expiration.sql"]);
-        }
-
-        try {
-            CreditAmountHistoryQuery::create()
-                ->find();
-        } catch (\Exception $exception) {
             $database->insertSql(null, [__DIR__ . "/Config/sql/credit_amount_history.sql"]);
+            self::setConfigValue('is_initialized', true);
         }
     }
 
