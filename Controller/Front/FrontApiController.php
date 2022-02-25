@@ -93,12 +93,11 @@ class FrontApiController extends BaseFrontOpenApiController
         }
         $amount = $openApiService->getRequestValue("amount");
         $amountAvailable = $this->getAmout($securityContext);
-        $amountLabel = money_format("%n", $amountAvailable);
 
         if ($amount > $amountAvailable) {
             return $this->jsonResponse(
                 [
-                    'error' => "Amount too high. You credit amount is : ".$amountLabel
+                    'error' => "Amount too high. You credit amount is : ".$amount
                 ]
             );
         }

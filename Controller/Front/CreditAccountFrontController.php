@@ -91,14 +91,13 @@ class CreditAccountFrontController extends BaseFrontController
             $force = $form->get('credit-account-force')->getData();
 
             if ($creditAccount === null || $creditDiscount > $creditAccount->getAmount()) {
-                $amountLabel = money_format("%n", $creditAccount === null ? 0 : $creditAccount->getAmount());
                 /** @noinspection PhpTranslationKeyInspection */
                 throw new \Exception(
                         Translator::getInstance()->trans(
                             "Amount too high. You credit amount is : ",
                             [],
                             CreditAccount::DOMAIN
-                        ) . $amountLabel
+                        ) . $creditAccount === null ? 0 : $creditAccount->getAmount()
                 );
             }
             $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $force);
