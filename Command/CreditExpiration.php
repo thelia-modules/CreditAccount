@@ -9,11 +9,17 @@ use CreditAccount\Model\CreditAccountExpirationQuery;
 use CreditAccount\Model\CreditAccountQuery;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Thelia\Command\ContainerAwareCommand;
 use Thelia\Model\CustomerQuery;
 
 class CreditExpiration extends ContainerAwareCommand
 {
+    /**
+     * @var EventDispatcherInterface
+     */
+    protected $dispatcher;
+
     public function configure()
     {
         $this
@@ -21,9 +27,14 @@ class CreditExpiration extends ContainerAwareCommand
             ->setDescription("Check expiration for credit account");
     }
 
+    public function __construct(string $name = null, EventDispatcherInterface $dispatcher)
+    {
+        parent::__construct($name);
+        $this->dispatcher = $dispatcher;
+    }
+
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $dispatcher = $this->getContainer()->get('event_dispatcher');
         $now = new \DateTime();
 
         $creditAccountExpirations = CreditAccountExpirationQuery::create()
@@ -48,7 +59,7 @@ class CreditExpiration extends ContainerAwareCommand
 
                     $event = new CreditAccountEvent($customer, -$creditAccount->getAmount());
                     $event->setWhoDidIt("Expiration $expirationDelay months");
-                    $dispatcher->dispatch($event, CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT);
+                    $this->dispatcher->dispatch($event, CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT);
 
                     $creditAccountExpiration->delete();
 

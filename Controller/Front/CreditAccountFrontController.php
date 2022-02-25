@@ -62,7 +62,7 @@ class CreditAccountFrontController extends BaseFrontController
         $creditAccount = CreditAccountQuery::create()
             ->findOneByCustomerId($customer->getId());
         $creditDiscount = $creditAccount->getAmount();
-        $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $requestStack->getSession(), $dispatcher);
+        $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount);
         return $this->generateRedirectFromRoute('order.invoice');
     }
 
@@ -101,7 +101,7 @@ class CreditAccountFrontController extends BaseFrontController
                         ) . $amountLabel
                 );
             }
-            $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $requestStack->getSession(), $dispatcher, $force);
+            $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $force);
 
         } catch (\Exception $e) {
             Tlog::getInstance()->error(

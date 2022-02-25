@@ -16,10 +16,6 @@
         <form name="credit_account_amount_form" class="CreditAccount\Form\CreditAccountAmountForm" />
     </forms>
 
-    <commands>
-        <command class="CreditAccount\Command\CreditExpiration" />
-    </commands>
-
     <hooks>
         <hook id="creditaccount.customer.hook" class="CreditAccount\Hook\HookManager" scope="request">
             <tag name="hook.event_listener" event="account.bottom" type="front" method="onAccountBottom" />

@@ -8,14 +8,18 @@ use OpenApi\Annotations as OA;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Controller\Front\BaseFrontOpenApiController;
 use Thelia\Core\HttpFoundation\JsonResponse;
+use OpenApi\Service\OpenApiService;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Thelia\Core\Security\SecurityContext;
+use Thelia\Core\Translation\Translator;
 
 /**
- * @Route("/creditaccount", name="creditaccount_api")
+ * @Route("/open_api/creditaccount", name="")
  */
 class FrontApiController extends BaseFrontOpenApiController
 {
     /**
-     * @Route("/getAmount", name="getAmount")
+     * @Route("/getAmount", name="getAmount",  methods="GET")
      *
      * @OA\Get(
      *     path="/creditaccount/getAmount",
@@ -36,22 +40,19 @@ class FrontApiController extends BaseFrontOpenApiController
      * )
      *
      */
-    public function getLoyaltyAmout()
+    public function getLoyaltyAmout(EventDispatcherInterface $eventDispatcher, SecurityContext $securityContext)
     {
         try {
             $this->checkAuth();
-            $this->checkCartNotEmpty();
+            $this->checkCartNotEmpty($eventDispatcher);
+
         } catch (\Exception $e) {
-            return $this->jsonResponse(
-                [
-                    'error' => "Customer isn't logged in or cart is not empty",
-                    'message' => $e->getMessage()
-                ]
-            );
+            throw new \Exception(Translator::getInstance()->trans('Customer isn\'t logged in or cart is empty'));
         }
-        return $this->jsonResponse(
+
+        return OpenApiService::jsonResponse(
             [
-                'amount' => $this->getAmout(),
+                'amount' => $this->getAmout($securityContext),
             ]
         );
     }
@@ -82,21 +83,16 @@ class FrontApiController extends BaseFrontOpenApiController
      * )
      *
      */
-    public function useCredit()
+    public function useCredit(EventDispatcherInterface $eventDispatcher,  OpenApiService $openApiService, SecurityContext $securityContext, CreditAccountManager $creditAccountManager)
     {
         try {
             $this->checkAuth();
-            $this->checkCartNotEmpty();
+            $this->checkCartNotEmpty($eventDispatcher);
         } catch (\Exception $e) {
-            return $this->jsonResponse(
-                [
-                    'error' => "Customer isn't logged in or cart is not empty",
-                    'message' => $e->getMessage()
-                ]
-            );
+            throw new \Exception(Translator::getInstance()->trans('Customer isn\'t logged in or cart is empty'));
         }
-        $amount = $this->getRequestValue("amount");
-        $amountAvailable = $this->getAmout();
+        $amount = $openApiService->getRequestValue("amount");
+        $amountAvailable = $this->getAmout($securityContext);
         $amountLabel = money_format("%n", $amountAvailable);
 
         if ($amount > $amountAvailable) {
@@ -107,16 +103,14 @@ class FrontApiController extends BaseFrontOpenApiController
             );
         }
 
-        /** @var CreditAccountManager $creditAccountManager */
-        $creditAccountManager = $this->container->get('creditaccount.manager');
-        $creditAccountManager->applyCreditDiscountInCartAndOrder($amount, $this->getSession(), $this->getDispatcher());
+        $creditAccountManager->applyCreditDiscountInCartAndOrder($amount);
 
         return new JsonResponse([]);
     }
 
-    protected function getAmout()
+    protected function getAmout(SecurityContext $securityContext)
     {
-        $customer = $this->getSecurityContext()->getCustomerUser();
+        $customer = $securityContext->getCustomerUser();
         $creditAccount = CreditAccountQuery::create()
             ->findOneByCustomerId($customer->getId());
         $amount = 0;
