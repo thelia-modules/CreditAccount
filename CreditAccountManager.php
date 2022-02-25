@@ -11,6 +11,8 @@ namespace CreditAccount;
 use CreditAccount\Event\CreditAccountEvent;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Thelia\Core\HttpFoundation\Session\Session;
 use Thelia\Core\Translation\Translator;
@@ -18,6 +20,7 @@ use Thelia\Coupon\CouponManager;
 use Thelia\Coupon\Type\CouponAbstract;
 use Thelia\Model\Exception\InvalidArgumentException;
 use Thelia\TaxEngine\TaxEngine;
+
 
 /**
  * Manage how Coupons could interact with Cart and Order
@@ -39,10 +42,18 @@ class CreditAccountManager
     /** @var TaxEngine $taxEngine */
     private $taxEngine;
 
-    public function __construct(CouponManager $couponManager, TaxEngine $taxEngine)
+    /** @var EventDispatcherInterface $eventDispatcher */
+    private $eventDispatcher;
+
+    /** @var RequestStack $requestStack */
+    private $requestStack;
+
+    public function __construct(CouponManager $couponManager, TaxEngine $taxEngine,EventDispatcherInterface $eventDispatcher, RequestStack $requestStack)
     {
         $this->couponManager = $couponManager;
         $this->taxEngine = $taxEngine;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->requestStack = $requestStack;
     }
 
     /**
@@ -74,8 +85,6 @@ class CreditAccountManager
      */
     public function applyCreditDiscountInCartAndOrder(
         $creditDiscountWanted,
-        SessionInterface $session,
-        EventDispatcherInterface $dispatcher,
         $force = true
     )
     {
@@ -85,7 +94,11 @@ class CreditAccountManager
         }
         $couponUsedArray = $this->couponManager->getCouponsKept();
 
-        $cart = $session->getSessionCart($dispatcher);
+        /* @var Request $request */
+        $request = $this->requestStack->getCurrentRequest();
+        $session = $request->getSession();
+        $cart = $session->getSessionCart();
+
         /** @noinspection MissingService */
         /** @noinspection CaseSensitivityServiceInspection */
         $taxCountry = $this->taxEngine->getDeliveryCountry();
@@ -133,7 +146,7 @@ class CreditAccountManager
         $cart->save();
 
         //update session
-        $this->setDiscount($session, $creditDiscountWanted, $dispatcher);
+        $this->setDiscount($session, $creditDiscountWanted, $this->eventDispatcher);
     }
 
     /**
