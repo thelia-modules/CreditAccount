@@ -88,7 +88,7 @@ class CreditAccountManager
         $force = true
     )
     {
-        if ($creditDiscountWanted <= 0)
+        if ($creditDiscountWanted < 0)
         {
             return;
         }
