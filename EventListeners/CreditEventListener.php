@@ -21,6 +21,7 @@ use CreditAccount\Model\CreditAccountExpirationQuery;
 use CreditAccount\Model\CreditAccountQuery;
 use CreditAccount\Model\CreditAmountHistory;
 use CreditAccount\Model\CreditAmountHistoryQuery;
+use OpenApi\Events\ModelExtendDataEvent;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -257,6 +258,11 @@ class CreditEventListener implements EventSubscriberInterface
         }
     }
 
+    public function addCreditFieldToCartModel(ModelExtendDataEvent $event)
+    {
+        $event->setExtendDataKeyValue('credit_used', $this->requestStack->getSession()->get('creditAccount.used'));
+    }
+
     public static function getSubscribedEvents()
     {
         return [
@@ -267,7 +273,8 @@ class CreditEventListener implements EventSubscriberInterface
             TheliaEvents::ORDER_BEFORE_PAYMENT => ['verifyCreditUsage', 128],
             TheliaEvents::ORDER_UPDATE_STATUS => ['updateCreditOnCancel'],
             TheliaEvents::COUPON_CONSUME => ["verifyCoupon", 140],
-            TheliaEvents::CART_ADDITEM => ["checkCreditExpiration", 10]
+            TheliaEvents::CART_ADDITEM => ["checkCreditExpiration", 10],
+            'add_extend_data_cart' => ["addCreditFieldToCartModel", 128]
         ];
     }
 }
