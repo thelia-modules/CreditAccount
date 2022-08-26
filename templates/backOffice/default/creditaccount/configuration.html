@@ -15,6 +15,9 @@
 {block name="check-module"}CreditAccount{/block}
 
 {block name="main-content"}
+{$limit = $smarty.get.limit|default:30}
+{$page = $smarty.get.page|default:1}
+
 <div class="modules-configure">
     <div id="wrapper" class="container">
         <div class="clearfix">
@@ -93,7 +96,8 @@
                             </thead>
 
                             <tbody>
-                            {loop type="credit_account" name="credit_account_list"}
+                            {loop type="credit_account" name="credit_account_list" page=$page limit=$limit order=1}
+
                                 <tr>
                                     <td>
                                         {loop type="customer" name="cust" current="false" id=$CUSTOMER_ID backend_context=1}
@@ -112,6 +116,20 @@
                                 </tr>
                             {/elseloop}
                             </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="100">
+                                        {include
+                                        file = "includes/pagination.html"
+
+                                        loop_ref       = "credit_account_list"
+                                        max_page_count = 10
+                                        page_url       = {url path="/admin/module/CreditAccount"}
+                                        }
+
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
