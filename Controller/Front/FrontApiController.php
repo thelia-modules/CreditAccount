@@ -52,7 +52,7 @@ class FrontApiController extends BaseFrontOpenApiController
 
         return OpenApiService::jsonResponse(
             [
-                'amount' => $this->getAmout($securityContext),
+                'amount' => $this->getAmount($securityContext),
             ]
         );
     }
@@ -92,7 +92,12 @@ class FrontApiController extends BaseFrontOpenApiController
             throw new \Exception(Translator::getInstance()->trans('Customer isn\'t logged in or cart is empty'));
         }
         $amount = $openApiService->getRequestValue("amount");
-        $amountAvailable = $this->getAmout($securityContext);
+
+        if (null === $amount = $this->verifyAmount($amount)) {
+            return new JsonResponse([]);
+        }
+
+        $amountAvailable = $this->getAmount($securityContext);
 
         if ($amount > $amountAvailable) {
             return $this->jsonResponse(
@@ -107,7 +112,7 @@ class FrontApiController extends BaseFrontOpenApiController
         return new JsonResponse([]);
     }
 
-    protected function getAmout(SecurityContext $securityContext)
+    protected function getAmount(SecurityContext $securityContext)
     {
         $customer = $securityContext->getCustomerUser();
         $creditAccount = CreditAccountQuery::create()
@@ -117,5 +122,16 @@ class FrontApiController extends BaseFrontOpenApiController
             $amount = $creditAccount->getAmount();
         }
         return $amount;
+    }
+
+    protected function verifyAmount($amount): null | float
+    {
+        $amount = str_replace(',', '.', $amount);
+        
+        if (!is_numeric($amount)) {
+            return null;
+        }
+        
+        return (float)$amount;
     }
 }
