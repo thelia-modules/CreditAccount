@@ -27,9 +27,9 @@ class CreditExpiration extends ContainerAwareCommand
             ->setDescription("Check expiration for credit account");
     }
 
-    public function __construct(string $name = null, EventDispatcherInterface $dispatcher)
+    public function __construct(EventDispatcherInterface $dispatcher)
     {
-        parent::__construct($name);
+        parent::__construct();
         $this->dispatcher = $dispatcher;
     }
 
