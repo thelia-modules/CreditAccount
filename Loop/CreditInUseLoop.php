@@ -40,7 +40,7 @@ class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
 
     public function __construct(ContainerInterface $container, RequestStack $requestStack, EventDispatcherInterface $eventDispatcher, SecurityContext $securityContext, TranslatorInterface $translator, array $theliaParserLoops, $kernelEnvironment)
     {
-        parent::__construct($container, $requestStack, $eventDispatcher, $securityContext, $translator, $theliaParserLoops, $kernelEnvironment);
+        $this->init($container, $requestStack, $eventDispatcher, $securityContext, $translator, $theliaParserLoops, $kernelEnvironment);
         $this->couponManager = $this->container->get('thelia.coupon.manager');
         $this->creditAccountManager = $this->container->get('creditaccount.manager');
     }
