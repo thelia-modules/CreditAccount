@@ -7,6 +7,7 @@ use CreditAccount\Event\CreditAccountEvent;
 use CreditAccount\Model\CreditAccountExpiration;
 use CreditAccount\Model\CreditAccountExpirationQuery;
 use CreditAccount\Model\CreditAccountQuery;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -33,7 +34,7 @@ class CreditExpiration extends ContainerAwareCommand
         $this->dispatcher = $dispatcher;
     }
 
-    public function execute(InputInterface $input, OutputInterface $output)
+    public function execute(InputInterface $input, OutputInterface $output): int
     {
         $now = new \DateTime();
 
@@ -67,7 +68,9 @@ class CreditExpiration extends ContainerAwareCommand
                 }
             } catch (\Exception $e) {
                 $output->writeln($e->getMessage());
+                return Command::FAILURE;
             }
         }
+        return Command::SUCCESS;
     }
 }
