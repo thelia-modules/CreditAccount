@@ -4,31 +4,15 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://thelia.net/schema/dic/config http://thelia.net/schema/dic/config/thelia-1.0.xsd">
 
+    <!-- Loop aliases kept (names differ from the auto snake_case). Forms and hooks
+         are auto-discovered in Thelia 3 (see CreditAccount::configureServices). -->
     <loops>
         <loop name="credit_account" class="CreditAccount\Loop\CreditAccountLoop" />
         <loop name="credit_account_history" class="CreditAccount\Loop\CreditAccountHistoryLoop" />
         <loop name="credit_account_usage" class="CreditAccount\Loop\CreditInUseLoop" />
     </loops>
 
-    <forms>
-        <form name="credit_account_form" class="CreditAccount\Form\CreditAccountForm" />
-        <form name="creditaccount_configuration_form" class="CreditAccount\Form\ConfigurationForm" />
-        <form name="credit_account_amount_form" class="CreditAccount\Form\CreditAccountAmountForm" />
-    </forms>
-
-    <hooks>
-        <hook id="creditaccount.customer.hook" class="CreditAccount\Hook\HookManager" scope="request">
-            <tag name="hook.event_listener" event="account.bottom" type="front" method="onAccountBottom" />
-        </hook>
-        <hook id="creditaccount.order.hook" class="CreditAccount\Hook\HookManager" scope="request">
-            <tag name="hook.event_listener" event="order-edit.after-order-product-list" type="back" method="accountUsageInOrder" />
-        </hook>
-
-        <hook id="creditaccount.order_invoice.hook" class="CreditAccount\Hook\HookManager" scope="request">
-            <tag name="hook.event_listener" event="order-invoice.before-discount" type="front" method="orderInvoiceForm" />
-        </hook>
-    </hooks>
-
+    <!-- Alias kept: CreditInUseLoop fetches the manager from the container by this id. -->
     <services>
         <service id="creditaccount.manager" alias="CreditAccount\CreditAccountManager" public="true"/>
     </services>

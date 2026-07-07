@@ -10,6 +10,8 @@
 /*      file that was distributed with this source code.                             */
 /*************************************************************************************/
 
+declare(strict_types=1);
+
 namespace CreditAccount;
 
 use CreditAccount\Model\CreditAccountExpirationQuery;
@@ -17,8 +19,7 @@ use CreditAccount\Model\CreditAccountQuery;
 use CreditAccount\Model\CreditAmountHistoryQuery;
 use Propel\Runtime\Connection\ConnectionInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
-use Thelia\Core\Template\TemplateDefinition;
-use Thelia\Install\Database;
+use Thelia\Core\Install\Database;
 use Thelia\Module\BaseModule;
 
 class CreditAccount extends BaseModule
@@ -35,7 +36,7 @@ class CreditAccount extends BaseModule
      */
     const CREDIT_ACCOUNT_USED = 'creditAccount.used.change';
 
-    public function postActivation(ConnectionInterface $con = null): void
+    public function postActivation(?ConnectionInterface $con = null): void
     {
         $database = new Database($con);
 
@@ -61,27 +62,10 @@ class CreditAccount extends BaseModule
         }
     }
 
-    /**
-     * @return array
-     */
-    public function getHooks()
-    {
-        return array(
-            array(
-                "type" => TemplateDefinition::FRONT_OFFICE,
-                "code" => "order-invoice.before-discount",
-                "title" => array(
-                    "en_US" => "Before discount code form block"
-                ),
-                "active" => true
-            )
-        );
-    }
-
     public static function configureServices(ServicesConfigurator $servicesConfigurator): void
     {
         $servicesConfigurator->load(self::getModuleCode().'\\', __DIR__)
-            ->exclude([THELIA_MODULE_DIR . ucfirst(self::getModuleCode()). "/I18n/*"])
+            ->exclude([__DIR__.'/I18n/*'])
             ->autowire(true)
             ->autoconfigure(true);
     }

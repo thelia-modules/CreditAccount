@@ -1,0 +1,64 @@
+{# Customer edit fragment (hook customer.edit) — no {% extends %} #}
+{% form_theme form with bo_form_themes only %}
+
+{% set balance_variant = balance == 0 ? 'secondary' : (balance < 0 ? 'danger' : 'success') %}
+
+<div class="card mb-4" id="credit-account-block">
+    <div class="card-header">{{ 'Credit account for this customer'|trans({}, 'creditaccount.bo.default') }}</div>
+    <div class="card-body">
+        <div class="mb-3">
+            <span class="me-2">{{ 'Current account balance:'|trans({}, 'creditaccount.bo.default') }}</span>
+            <span class="badge bg-{{ balance_variant }} fs-6">{{ balance|number_format(2, '.', ' ') }} {{ currency_symbol }}</span>
+        </div>
+
+        {{ form_start(form, {action: path('creditAccount_add'), method: 'POST', attr: {id: 'credit-account-add-form'}}) }}
+        {% if form.vars.errors|length %}
+            <div class="alert alert-danger">
+                {% for error in form.vars.errors %}{{ error.message }}{% endfor %}
+            </div>
+        {% endif %}
+
+        {{ form_widget(form.customer_id, {value: customer_id}) }}
+        {% if form.success_url is defined %}{{ form_widget(form.success_url, {value: app.request.uri}) }}{% endif %}
+
+        <div class="row g-2 align-items-end">
+            <div class="col-md-6">
+                {{ form_row(form.amount) }}
+            </div>
+            <div class="col-md-6">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-lg"></i> {{ 'Add amount'|trans({}, 'creditaccount.bo.default') }}
+                </button>
+            </div>
+        </div>
+        {{ form_end(form, {render_rest: false}) }}
+
+        {# ── History ──────────────────────────────────────────────────── #}
+        {% set history_rows = [] %}
+        {% for entry in history %}
+            {% set amount_variant = entry.amount < 0 ? 'text-danger' : 'text-success' %}
+            {% set order_html = entry.order_ref
+                ? '<a href="' ~ path('admin.order.update.view', { order_id: entry.order_id })|e ~ '">' ~ entry.order_ref|e ~ '</a>'
+                : ('None'|trans({}, 'creditaccount.bo.default')) %}
+            {% set history_rows = history_rows|merge([{
+                'amount_html': '<span class="' ~ amount_variant ~ '">' ~ (entry.amount|number_format(2, '.', ' ')) ~ ' ' ~ currency_symbol|e ~ '</span>',
+                'date': entry.created_at ? entry.created_at|format_datetime('medium', 'short') : '-',
+                'who': entry.who,
+                'order_html': order_html,
+            }]) %}
+        {% endfor %}
+
+        <h6 class="mt-4">{{ 'History'|trans({}, 'creditaccount.bo.default') }}</h6>
+        {{ component('BoDataTable', {
+            id: 'credit-account-history',
+            columns: [
+                column_html('amount_html', 'Entry amount'|trans({}, 'creditaccount.bo.default'), 'end'),
+                column('date', 'Date'|trans({}, 'creditaccount.bo.default')),
+                column('who', 'Origin'|trans({}, 'creditaccount.bo.default')),
+                column_html('order_html', 'Related order'|trans({}, 'creditaccount.bo.default')),
+            ],
+            rows: history_rows,
+            emptyMessage: 'No entry yet in this account.'|trans({}, 'creditaccount.bo.default'),
+        }) }}
+    </div>
+</div>

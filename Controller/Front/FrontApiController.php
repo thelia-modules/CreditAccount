@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditAccount\Controller\Front;
 
 use CreditAccount\CreditAccountManager;
 use CreditAccount\Model\CreditAccountQuery;
 use OpenApi\Annotations as OA;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Controller\Front\BaseFrontOpenApiController;
 use Thelia\Core\HttpFoundation\JsonResponse;
 use OpenApi\Service\OpenApiService;
@@ -13,14 +15,11 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Thelia\Core\Security\SecurityContext;
 use Thelia\Core\Translation\Translator;
 
-/**
- * @Route("/open_api/creditaccount", name="")
- */
+#[Route('/open_api/creditaccount', name: '')]
 class FrontApiController extends BaseFrontOpenApiController
 {
+    #[Route('/getAmount', name: 'getAmount', methods: ['GET'])]
     /**
-     * @Route("/getAmount", name="getAmount",  methods="GET")
-     *
      * @OA\Get(
      *     path="/creditaccount/getAmount",
      *     tags={"creditaccount"},
@@ -57,9 +56,8 @@ class FrontApiController extends BaseFrontOpenApiController
         );
     }
 
+    #[Route('/useCredit', name: 'useCredit', methods: ['POST'])]
     /**
-     * @Route("/useCredit", name="useCredit")
-     *
      * @OA\Post(
      *     path="/creditaccount/useCredit",
      *     tags={"creditaccount"},
@@ -101,9 +99,7 @@ class FrontApiController extends BaseFrontOpenApiController
 
         if ($amount > $amountAvailable) {
             return $this->jsonResponse(
-                [
-                    'error' => "Amount too high. You credit amount is : ".$amount
-                ]
+                json_encode(['error' => 'Amount too high. Your credit amount is: '.$amountAvailable])
             );
         }
 

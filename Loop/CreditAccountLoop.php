@@ -10,10 +10,13 @@
 /*      file that was distributed with this source code.                             */
 /*************************************************************************************/
 
+declare(strict_types=1);
+
 namespace CreditAccount\Loop;
 
 use CreditAccount\Model\CreditAccount;
 use CreditAccount\Model\CreditAccountQuery;
+use Propel\Runtime\ActiveQuery\ModelCriteria;
 use Thelia\Core\Template\Element\BaseLoop;
 use Thelia\Core\Template\Element\LoopResult;
 use Thelia\Core\Template\Element\LoopResultRow;
@@ -26,17 +29,19 @@ use Thelia\Core\Template\Loop\Argument\ArgumentCollection;
  * Class CreditAccountLoop
  * @package CreditAccount\Loop
  * @author Manuel Raynaud <mraynaud@openstudio.fr>
+ *
+ * @method int|null getCustomer()
  */
 class CreditAccountLoop extends BaseLoop implements PropelSearchLoopInterface
 {
-    protected function getArgDefinitions()
+    protected function getArgDefinitions(): ArgumentCollection
     {
         return new ArgumentCollection(
             Argument::createIntTypeArgument('customer', null)
         );
     }
 
-    public function buildModelCriteria()
+    public function buildModelCriteria(): ModelCriteria
     {
         $customer = $this->getCustomer();
 
@@ -49,7 +54,7 @@ class CreditAccountLoop extends BaseLoop implements PropelSearchLoopInterface
         return $search;
     }
 
-    public function parseResults(LoopResult $loopResult)
+    public function parseResults(LoopResult $loopResult): LoopResult
     {
 
         /** @var CreditAccount $creditAccount */

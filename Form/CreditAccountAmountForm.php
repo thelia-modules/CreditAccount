@@ -6,6 +6,8 @@
  * Time: 09:42
  */
 
+declare(strict_types=1);
+
 namespace CreditAccount\Form;
 
 
@@ -40,7 +42,7 @@ class CreditAccountAmountForm  extends BaseForm
         ;
     }
 
-    public static function getName()
+    public static function getName(): string
     {
         return "credit_account_order_amount";
     }

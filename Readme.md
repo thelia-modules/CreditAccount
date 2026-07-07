@@ -15,6 +15,30 @@ You could also download the zip from github.
 
 After that, you just have to activate the module in your back-office.
 
+## Thelia 3 — Flexy front-office components
+
+On the Thelia 3 (twig branch) front-office, the Flexy theme has **no front hook system**: components must be mounted explicitly in the theme templates. This module ships two ready-to-use components (namespace `@CreditAccountModule`).
+
+### `CreditAccount:Balance` (TwigComponent)
+
+Displays the current customer's credit balance. Mount it on the customer account page:
+
+```twig
+{{ component('CreditAccount:Balance') }}
+```
+
+### `CreditAccount:CreditForm` (LiveComponent)
+
+Lets a logged-in customer apply or remove their credit as a discount during checkout. It applies the discount through the cart (`Thelia\Domain\Cart\CartFacade`), recomputes the postage, then emits the `syncSummary` event so the checkout summary re-renders. Mount it in the checkout summary, next to the promo-code form:
+
+```twig
+{{ component('CreditAccount:CreditForm') }}
+```
+
+The component renders nothing when the customer has no available credit, so it is safe to mount unconditionally. The `Flexy:Checkout:Summary` component already listens to `syncSummary`, so the applied discount and the updated total appear automatically.
+
+> The legacy Smarty hooks (`account.bottom`, `order-invoice.before-discount`) and the `/creditAccount/*` routes are kept for backward compatibility, but the Flexy front-office uses the components above.
+
 ## How to use it
 
 In your back-office, on each customer edition page you can add a new credit account. 

@@ -10,6 +10,8 @@
 /*      file that was distributed with this source code.                             */
 /*************************************************************************************/
 
+declare(strict_types=1);
+
 namespace CreditAccount\Form;
 
 use CreditAccount\CreditAccount;
@@ -53,7 +55,7 @@ class CreditAccountForm extends BaseForm
     /**
      * @return string the name of you form. This name must be unique
      */
-    public static function getName()
+    public static function getName(): string
     {
         return 'credit_account';
     }

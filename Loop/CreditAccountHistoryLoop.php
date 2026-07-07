@@ -10,11 +10,14 @@
 /*      file that was distributed with this source code.                             */
 /*************************************************************************************/
 
+declare(strict_types=1);
+
 namespace CreditAccount\Loop;
 
 use CreditAccount\Model\CreditAmountHistory;
 use CreditAccount\Model\CreditAmountHistoryQuery;
 use Propel\Runtime\ActiveQuery\Criteria;
+use Propel\Runtime\ActiveQuery\ModelCriteria;
 use Thelia\Core\Template\Element\BaseLoop;
 use Thelia\Core\Template\Element\LoopResult;
 use Thelia\Core\Template\Element\LoopResultRow;
@@ -26,12 +29,15 @@ use Thelia\Core\Template\Loop\Argument\ArgumentCollection;
  * Class CreditAccountHistoryLoop
  * @package CreditAccount\Loop
  * @author Manuel Raynaud <mraynaud@openstudio.fr>
+ *
+ * @method int getCreditAccount()
+ * @method int|null getOrder()
  */
 class CreditAccountHistoryLoop extends BaseLoop implements PropelSearchLoopInterface
 {
     protected $timestampable = true;
 
-    protected function getArgDefinitions()
+    protected function getArgDefinitions(): ArgumentCollection
     {
         return new ArgumentCollection(
             Argument::createIntTypeArgument('credit_account', null, true),
@@ -39,7 +45,7 @@ class CreditAccountHistoryLoop extends BaseLoop implements PropelSearchLoopInter
         );
     }
 
-    public function buildModelCriteria()
+    public function buildModelCriteria(): ModelCriteria
     {
         $search = CreditAmountHistoryQuery::create()
             ->filterByCreditAccountId($this->getCreditAccount())
@@ -58,7 +64,7 @@ class CreditAccountHistoryLoop extends BaseLoop implements PropelSearchLoopInter
      *
      * @return LoopResult
      */
-    public function parseResults(LoopResult $loopResult)
+    public function parseResults(LoopResult $loopResult): LoopResult
     {
         /** @var CreditAmountHistory $creditAmountHistory */
         foreach ($loopResult->getResultDataCollection() as $creditAmountHistory) {
