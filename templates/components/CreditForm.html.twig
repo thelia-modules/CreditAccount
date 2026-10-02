@@ -1,0 +1,29 @@
+<div {{ attributes.defaults({'class': 'CreditForm'}) }} data-loading="addClass(opacity-50 pointer-events-none)">
+    {% if this.availableCredit > 0 %}
+        {% if this.appliedCredit > 0 %}
+            <div class="d-flex justify-content-between align-items-center">
+                <span>
+                    {{ 'Credit applied:'|trans({}, 'creditaccount.fo.default') }}
+                    <strong>{{ this.appliedCredit|number_format(2, ',', ' ') }} {{ this.currencySymbol }}</strong>
+                </span>
+                <button type="button" class="btn btn-link p-0"
+                        data-action="live#action:prevent" data-live-action-param="remove">
+                    {{ 'Remove'|trans({}, 'creditaccount.fo.default') }}
+                </button>
+            </div>
+        {% else %}
+            <label class="form-label">
+                {{ 'Use my credit'|trans({}, 'creditaccount.fo.default') }}
+                ({{ 'available:'|trans({}, 'creditaccount.fo.default') }} {{ this.availableCredit|number_format(2, ',', ' ') }} {{ this.currencySymbol }})
+            </label>
+            <div class="d-flex gap-2">
+                <input type="text" class="form-control" data-model="amount"
+                       placeholder="{{ this.availableCredit|number_format(2, '.', '') }}">
+                <button type="button" class="btn btn-primary"
+                        data-action="live#action:prevent" data-live-action-param="apply">
+                    {{ 'Apply'|trans({}, 'creditaccount.fo.default') }}
+                </button>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>

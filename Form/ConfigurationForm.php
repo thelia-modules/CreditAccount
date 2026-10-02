@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditAccount\Form;
 
 use CreditAccount\CreditAccount;
@@ -31,7 +33,7 @@ class ConfigurationForm extends BaseForm
                 "expiration_delay",
                 NumberType::class,
                 [
-                    "data" => CreditAccount::getConfigValue("expiration_delay", 18),
+                    "data" => CreditAccount::getConfigValue("expiration_delay", "18"),
                     "label"=>Translator::getInstance()->trans("Expiration delay (in months)", [], CreditAccount::DOMAIN),
                     "label_attr" => ["for" => "expiration_delay"],
                     "required" => false
@@ -40,7 +42,7 @@ class ConfigurationForm extends BaseForm
         ;
     }
 
-    public static function getName()
+    public static function getName(): string
     {
         return "creditaccount_configuration_form";
     }

@@ -10,6 +10,8 @@
 /*      file that was distributed with this source code.                             */
 /*************************************************************************************/
 
+declare(strict_types=1);
+
 namespace CreditAccount\Controller\Front;
 
 use CreditAccount\CreditAccount;
@@ -18,27 +20,21 @@ use CreditAccount\Form\CreditAccountAmountForm;
 use CreditAccount\Model\CreditAccountQuery;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Attribute\Route;
 use Thelia\Controller\Front\BaseFrontController;
 use Thelia\Core\Security\SecurityContext;
 use Thelia\Core\Template\ParserContext;
 use Thelia\Core\Translation\Translator;
 use Thelia\Log\Tlog;
 use Thelia\Model\Customer;
-use Symfony\Component\Routing\Annotation\Route;
 
-/**
- * @Route("/creditAccount", name="creditAccount_front")
- * Class CreditAccountFrontController
- * @package CreditAccount\Controller\Front
- * @author Manuel Raynaud <mraynaud@openstudio.fr>
- */
+#[Route('/creditAccount', name: 'creditAccount_front')]
 class CreditAccountFrontController extends BaseFrontController
 {
     /**
-     * @return \Symfony\Component\HttpFoundation\Response
      * @throws \Propel\Runtime\Exception\PropelException
-     * @Route("/cancel", name="_cancel", methods="GET")
      */
+    #[Route('/cancel', name: '_cancel', methods: ['GET'])]
     public function cancelUsage(RequestStack $requestStack, EventDispatcherInterface $dispatcher, CreditAccountManager $creditAccountManager)
     {
         $this->checkAuth();
@@ -47,10 +43,9 @@ class CreditAccountFrontController extends BaseFrontController
     }
 
     /**
-     * @return \Symfony\Component\HttpFoundation\Response
      * @throws \Propel\Runtime\Exception\PropelException
-     * @Route("/use", name="_useAmont", methods="GET")
      */
+    #[Route('/use', name: '_useAmont', methods: ['GET'])]
     public function useAmount(EventDispatcherInterface $dispatcher, SecurityContext $securityContext, CreditAccountManager $creditAccountManager, RequestStack $requestStack)
     {
         $this->checkAuth();
@@ -67,10 +62,9 @@ class CreditAccountFrontController extends BaseFrontController
     }
 
     /**
-     * @return \Symfony\Component\HttpFoundation\Response
      * @throws \Exception
-     * @Route("/cart/add", name="_useAmontInOrder", methods="POST")
      */
+    #[Route('/cart/add', name: '_useAmontInOrder', methods: ['POST'])]
     public function useAmountInCart(EventDispatcherInterface $dispatcher, SecurityContext $securityContext, CreditAccountManager $creditAccountManager, RequestStack $requestStack, ParserContext $parserContext)
     {
         $this->checkAuth();
@@ -91,13 +85,14 @@ class CreditAccountFrontController extends BaseFrontController
             $force = $form->get('credit-account-force')->getData();
 
             if ($creditAccount === null || $creditDiscount > $creditAccount->getAmount()) {
+                $available = $creditAccount === null ? 0 : $creditAccount->getAmount();
                 /** @noinspection PhpTranslationKeyInspection */
                 throw new \Exception(
-                        Translator::getInstance()->trans(
-                            "Amount too high. You credit amount is : ",
-                            [],
-                            CreditAccount::DOMAIN
-                        ) . $creditAccount === null ? 0 : $creditAccount->getAmount()
+                    Translator::getInstance()->trans(
+                        "Amount too high. You credit amount is : ",
+                        [],
+                        CreditAccount::DOMAIN
+                    ).$available
                 );
             }
             $creditAccountManager->applyCreditDiscountInCartAndOrder($creditDiscount, $force);
@@ -118,12 +113,12 @@ class CreditAccountFrontController extends BaseFrontController
     }
 
     /**
-     * @return \Symfony\Component\HttpFoundation\Response
      * @throws \Propel\Runtime\Exception\PropelException
-     * @Route("/cart/remove", name="_removeAmont", methods="GET")
      */
+    #[Route('/cart/remove', name: '_removeAmont', methods: ['GET'])]
     public function removeAmountFromCart(RequestStack $requestStack, EventDispatcherInterface $dispatcher, CreditAccountManager $creditAccountManager)
     {
+        $this->checkAuth();
         $creditAccountManager->removeCreditDiscountFromCartAndOrder($requestStack->getSession(), $dispatcher);
         return $this->generateRedirectFromRoute('cart.view');
     }

@@ -25,7 +25,7 @@ class CreditAccount extends BaseCreditAccount
         return $this;
     }
 
-    public function postSave(ConnectionInterface $con = null)
+    public function postSave(?ConnectionInterface $con = null): void
     {
         if ($this->updateAmount != 0) {
             $history =  new CreditAmountHistory();

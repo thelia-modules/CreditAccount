@@ -1,0 +1,62 @@
+{# Module configuration fragment — no {% extends %} — rendered inside the module-configure page #}
+{% form_theme form with bo_form_themes only %}
+
+{# ── Credit accounts list ─────────────────────────────────────────────── #}
+{% set accounts_rows = [] %}
+{% for acc in accounts %}
+    {% set balance_variant = acc.balance == 0 ? 'secondary' : (acc.balance < 0 ? 'danger' : 'success') %}
+    {% set accounts_rows = accounts_rows|merge([{
+        'id': acc.id,
+        'lastname': acc.lastname,
+        'firstname': acc.firstname,
+        'email': acc.email,
+        'balance_html': '<span class="badge bg-' ~ balance_variant ~ '">' ~ (acc.balance|number_format(2, '.', ' ')) ~ ' ' ~ currency_symbol|e ~ '</span>',
+        '_actions': [
+            row_action('edit', 'Edit'|trans, path('admin.customer.update.view', { customer_id: acc.customer_id })),
+        ],
+    }]) %}
+{% endfor %}
+
+<div class="card mb-4" id="creditaccount-list">
+    <div class="card-header">{{ 'Customer credit accounts'|trans({}, 'creditaccount.bo.default') }}</div>
+    <div class="card-body">
+        {{ component('BoDataTable', {
+            id: 'creditaccount-accounts',
+            columns: [
+                column('id', 'ID'|trans({}, 'creditaccount.bo.default')),
+                column('lastname', 'Lastname'|trans({}, 'creditaccount.bo.default')),
+                column('firstname', 'Firstname'|trans({}, 'creditaccount.bo.default')),
+                column('email', 'Email'|trans({}, 'creditaccount.bo.default')),
+                column_html('balance_html', 'Balance'|trans({}, 'creditaccount.bo.default'), 'end'),
+                column_actions(),
+            ],
+            rows: accounts_rows,
+            emptyMessage: 'No credit account yet.'|trans({}, 'creditaccount.bo.default'),
+        }) }}
+    </div>
+</div>
+
+{# ── Expiration configuration ─────────────────────────────────────────── #}
+<div class="card mb-4" id="creditaccount-config">
+    <div class="card-header">{{ 'CreditAccount configuration'|trans({}, 'creditaccount.bo.default') }}</div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <p>{{ 'Enable expiration of credit below, then choose the expiration delay (in months).'|trans({}, 'creditaccount.bo.default') }}</p>
+            <p>{{ 'Expiration is checked each time the customer adds an item to the cart; you can also run it as a cron job:'|trans({}, 'creditaccount.bo.default') }}</p>
+            <p><code>php Thelia creditaccount:expiration:check</code></p>
+        </div>
+
+        {{ form_start(form, {action: path('creditaccount_config_save'), method: 'POST', attr: {id: 'creditaccount-config-form'}}) }}
+        {% if form.vars.errors|length %}
+            <div class="alert alert-danger">
+                {% for error in form.vars.errors %}{{ error.message }}{% endfor %}
+            </div>
+        {% endif %}
+        {{ form_row(form.expiration_enabled) }}
+        {{ form_row(form.expiration_delay) }}
+        <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-save"></i> {{ 'Save'|trans({}, 'creditaccount.bo.default') }}
+        </button>
+        {{ form_end(form) }}
+    </div>
+</div>

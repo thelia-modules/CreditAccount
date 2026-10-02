@@ -1,0 +1,13 @@
+<div {{ attributes.defaults({'class': 'CreditBalance card mb-4'}) }}>
+    <div class="card-body">
+        <h4 class="card-title">{{ 'My credit account'|trans({}, 'creditaccount.fo.default') }}</h4>
+        {% if this.hasCredit %}
+            <p class="mb-0">
+                {{ 'Balance:'|trans({}, 'creditaccount.fo.default') }}
+                <strong>{{ this.balance|number_format(2, ',', ' ') }} {{ this.currencySymbol }}</strong>
+            </p>
+        {% else %}
+            <p class="mb-0 text-muted">{{ 'You have no credit available.'|trans({}, 'creditaccount.fo.default') }}</p>
+        {% endif %}
+    </div>
+</div>

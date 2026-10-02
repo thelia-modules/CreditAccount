@@ -10,21 +10,18 @@
 /*      file that was distributed with this source code.                             */
 /*************************************************************************************/
 
+declare(strict_types=1);
+
 namespace CreditAccount\Loop;
 
 use CreditAccount\CreditAccountManager;
-use Psr\Container\ContainerInterface;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Contracts\Translation\TranslatorInterface;
-use Thelia\Core\Security\SecurityContext;
 use Thelia\Core\Template\Element\ArraySearchLoopInterface;
 use Thelia\Core\Template\Element\BaseLoop;
 use Thelia\Core\Template\Element\LoopResult;
 use Thelia\Core\Template\Element\LoopResultRow;
+use Thelia\Core\HttpFoundation\Session\Session;
 use Thelia\Core\Template\Loop\Argument\ArgumentCollection;
-use Thelia\Coupon\CouponManager;
-
+use Thelia\Domain\Promotion\Coupon\Service\CouponManager;
 
 /**
  * Class CreditInUseLoop
@@ -33,24 +30,18 @@ use Thelia\Coupon\CouponManager;
  */
 class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
 {
-    /** @var CouponManager  */
-    private $couponManager;
-    /** @var CreditAccountManager  */
-    private $creditAccountManager;
-
-    public function __construct(ContainerInterface $container, RequestStack $requestStack, EventDispatcherInterface $eventDispatcher, SecurityContext $securityContext, TranslatorInterface $translator, array $theliaParserLoops, $kernelEnvironment)
-    {
-        $this->init($container, $requestStack, $eventDispatcher, $securityContext, $translator, $theliaParserLoops, $kernelEnvironment);
-        $this->couponManager = $this->container->get('thelia.coupon.manager');
-        $this->creditAccountManager = $this->container->get('creditaccount.manager');
+    public function __construct(
+        private readonly CouponManager $couponManager,
+        private readonly CreditAccountManager $creditAccountManager,
+    ) {
     }
 
-    protected function getArgDefinitions()
+    protected function getArgDefinitions(): ArgumentCollection
     {
         return new ArgumentCollection();
     }
 
-    public function parseResults(LoopResult $loopResult)
+    public function parseResults(LoopResult $loopResult): LoopResult
     {
         if ($loopResult->getResultDataCollectionCount() > 0) {
             $session = $this->getCurrentRequest()->getSession();
@@ -67,24 +58,22 @@ class CreditInUseLoop extends BaseLoop implements ArraySearchLoopInterface
         return $loopResult;
     }
 
-
-    /**
-     * this method returns an array
-     *
-     * @return array
-     */
-    public function buildArray()
+    public function buildArray(): array
     {
         $session = $this->getCurrentRequest()->getSession();
+        if (!$session instanceof Session) {
+            return [];
+        }
+
         if (
-            $this->creditAccountManager->getDiscount($session) > 0 ||
-            !empty($session->getConsumedCoupons())
+            $this->creditAccountManager->getDiscount($session) > 0
+            || !empty($session->getConsumedCoupons())
         ) {
             // Call parseResults once.
-            return [ 'hey ! parseResults !' ];
+            return ['hey ! parseResults !'];
         }
 
         // Do not call parseResults.
-        return [ ];
+        return [];
     }
 }

@@ -10,6 +10,8 @@
 /*      file that was distributed with this source code.                             */
 /*************************************************************************************/
 
+declare(strict_types=1);
+
 namespace CreditAccount\EventListeners;
 
 use CreditAccount\CreditAccount;
@@ -31,7 +33,7 @@ use Thelia\Core\Event\Order\OrderEvent;
 use Thelia\Core\Event\TheliaEvents;
 use Thelia\Core\HttpFoundation\Request;
 use Thelia\Core\Translation\Translator;
-use Thelia\Coupon\CouponManager;
+use Thelia\Domain\Promotion\Coupon\Service\CouponManager;
 use Thelia\Model\CouponQuery;
 use Thelia\Model\CustomerQuery;
 use Thelia\Model\Order;
@@ -47,7 +49,7 @@ class CreditEventListener implements EventSubscriberInterface
     const CANCELED = 'canceled';
 
     /**
-     * @var \Thelia\Core\HttpFoundation\Request
+     * @var RequestStack
      */
     protected $requestStack;
 
@@ -123,13 +125,13 @@ class CreditEventListener implements EventSubscriberInterface
      */
     public function updateOrCreateExpiration(CreditAccountEvent $event)
     {
-        if (CreditAccount::getConfigValue('expiration_enabled', false) === "true"  && $event->getAmount() > 0) {
+        if (CreditAccount::getConfigValue('expiration_enabled') === "true"  && $event->getAmount() > 0) {
             $creditAccountExpiration =  CreditAccountExpirationQuery::create()
                 ->filterByCreditAccountId($event->getCreditAccount()->getId())
                 ->findOneOrCreate();
 
             $creditAccountExpiration->setExpirationStart(new \DateTime())
-                ->setExpirationDelay(CreditAccount::getConfigValue('expiration_delay', 18));
+                ->setExpirationDelay((int) CreditAccount::getConfigValue('expiration_delay', '18'));
 
             $creditAccountExpiration->save();
         }
@@ -221,7 +223,6 @@ class CreditEventListener implements EventSubscriberInterface
             return;
         }
 
-        /** @var CreditAccountExpiration $creditExpiration */
         $creditExpiration = CreditAccountExpirationQuery::create()
             ->useCreditAccountQuery()
                 ->filterByCustomerId($customerId)
@@ -263,7 +264,7 @@ class CreditEventListener implements EventSubscriberInterface
         $event->setExtendDataKeyValue('credit_used', $this->requestStack->getSession()->get('creditAccount.used'));
     }
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT => [
