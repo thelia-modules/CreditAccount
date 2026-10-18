@@ -5,6 +5,9 @@
     "require": {
         "thelia/installer": "~1.1"
     },
+    "suggest": {
+        "thelia/open-api-module": "Lets the credit account listener expose the used credit in the cart of the Open API"
+    },
     "extra": {
         "installer-name": "CreditAccount"
     }
