@@ -6,39 +6,17 @@ namespace CreditAccount\Controller\Front;
 
 use CreditAccount\CreditAccountManager;
 use CreditAccount\Model\CreditAccountQuery;
-use OpenApi\Annotations as OA;
 use Symfony\Component\Routing\Attribute\Route;
-use OpenApi\Controller\Front\BaseFrontOpenApiController;
-use Thelia\Core\HttpFoundation\JsonResponse;
-use OpenApi\Service\OpenApiService;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Thelia\Controller\Front\BaseFrontController;
 use Thelia\Core\Security\SecurityContext;
 use Thelia\Core\Translation\Translator;
 
 #[Route('/open_api/creditaccount', name: '')]
-class FrontApiController extends BaseFrontOpenApiController
+class FrontApiController extends BaseFrontController
 {
     #[Route('/getAmount', name: 'getAmount', methods: ['GET'])]
-    /**
-     * @OA\Get(
-     *     path="/creditaccount/getAmount",
-     *     tags={"creditaccount"},
-     *     summary="Get the loyalty credit account for this customer",
-     *     @OA\Response(
-     *          response="200",
-     *          description="Success",
-     *          @OA\JsonContent(
-     *                 @OA\Schema(
-     *                  @OA\Property(
-     *                      property="amount",
-     *                      type="number",
-     *                      format="float",
-     *                 ),
-     *             ))
-     *     ),
-     * )
-     *
-     */
     public function getLoyaltyAmout(EventDispatcherInterface $eventDispatcher, SecurityContext $securityContext)
     {
         try {
@@ -49,39 +27,11 @@ class FrontApiController extends BaseFrontOpenApiController
             throw new \Exception(Translator::getInstance()->trans('Customer isn\'t logged in or cart is empty'));
         }
 
-        return OpenApiService::jsonResponse(
-            [
-                'amount' => $this->getAmount($securityContext),
-            ]
-        );
+        return new JsonResponse(['amount' => $this->getAmount($securityContext)]);
     }
 
     #[Route('/useCredit', name: 'useCredit', methods: ['POST'])]
-    /**
-     * @OA\Post(
-     *     path="/creditaccount/useCredit",
-     *     tags={"creditaccount"},
-     *     summary="Use the credit passed in parameters and decrease the cart amount",
-     *     @OA\RequestBody(
-     *          @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(
-     *                     property="amount",
-     *                     type="number",
-     *                     format="float",
-     *                 ),
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *          response="200",
-     *          description="Success",
-     *     )
-     * )
-     *
-     */
-    public function useCredit(EventDispatcherInterface $eventDispatcher,  OpenApiService $openApiService, SecurityContext $securityContext, CreditAccountManager $creditAccountManager)
+    public function useCredit(EventDispatcherInterface $eventDispatcher, SecurityContext $securityContext, CreditAccountManager $creditAccountManager)
     {
         try {
             $this->checkAuth();
@@ -89,7 +39,7 @@ class FrontApiController extends BaseFrontOpenApiController
         } catch (\Exception $e) {
             throw new \Exception(Translator::getInstance()->trans('Customer isn\'t logged in or cart is empty'));
         }
-        $amount = $openApiService->getRequestValue("amount");
+        $amount = json_decode($this->getRequest()->getContent(), true)['amount'] ?? null;
 
         if (null === $amount = $this->verifyAmount($amount)) {
             return new JsonResponse([]);
@@ -98,9 +48,7 @@ class FrontApiController extends BaseFrontOpenApiController
         $amountAvailable = $this->getAmount($securityContext);
 
         if ($amount > $amountAvailable) {
-            return $this->jsonResponse(
-                json_encode(['error' => 'Amount too high. Your credit amount is: '.$amountAvailable])
-            );
+            return new JsonResponse(['error' => 'Amount too high. Your credit amount is: '.$amountAvailable]);
         }
 
         $creditAccountManager->applyCreditDiscountInCartAndOrder($amount);
@@ -120,10 +68,14 @@ class FrontApiController extends BaseFrontOpenApiController
         return $amount;
     }
 
-    protected function verifyAmount($amount): null | float
+    protected function verifyAmount(mixed $amount): null | float
     {
-        $amount = str_replace(',', '.', $amount);
-        
+        if (!is_scalar($amount)) {
+            return null;
+        }
+
+        $amount = str_replace(',', '.', (string) $amount);
+
         if (!is_numeric($amount)) {
             return null;
         }

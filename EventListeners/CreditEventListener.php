@@ -23,7 +23,6 @@ use CreditAccount\Model\CreditAccountExpirationQuery;
 use CreditAccount\Model\CreditAccountQuery;
 use CreditAccount\Model\CreditAmountHistory;
 use CreditAccount\Model\CreditAmountHistoryQuery;
-use OpenApi\Events\ModelExtendDataEvent;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -259,14 +258,14 @@ class CreditEventListener implements EventSubscriberInterface
         }
     }
 
-    public function addCreditFieldToCartModel(ModelExtendDataEvent $event)
+    public function addCreditFieldToCartModel(object $event): void
     {
         $event->setExtendDataKeyValue('credit_used', $this->requestStack->getSession()->get('creditAccount.used'));
     }
 
     public static function getSubscribedEvents(): array
     {
-        return [
+        $events = [
             CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT => [
                     ['addAmount', 128],
                     ['updateOrCreateExpiration', 64],
@@ -275,7 +274,13 @@ class CreditEventListener implements EventSubscriberInterface
             TheliaEvents::ORDER_UPDATE_STATUS => ['updateCreditOnCancel'],
             TheliaEvents::COUPON_CONSUME => ["verifyCoupon", 140],
             TheliaEvents::CART_ADDITEM => ["checkCreditExpiration", 10],
-            'add_extend_data_cart' => ["addCreditFieldToCartModel", 128]
         ];
+
+        // Event of the optional OpenApi module.
+        if (class_exists(\OpenApi\Events\ModelExtendDataEvent::class)) {
+            $events['add_extend_data_cart'] = ['addCreditFieldToCartModel', 128];
+        }
+
+        return $events;
     }
 }
