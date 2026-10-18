@@ -4,16 +4,6 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://thelia.net/schema/dic/config http://thelia.net/schema/dic/config/thelia-1.0.xsd">
 
-    <!-- Loop aliases kept (names differ from the auto snake_case). Forms and hooks
-         are auto-discovered in Thelia 3 (see CreditAccount::configureServices). -->
-    <loops>
-        <loop name="credit_account" class="CreditAccount\Loop\CreditAccountLoop" />
-        <loop name="credit_account_history" class="CreditAccount\Loop\CreditAccountHistoryLoop" />
-        <loop name="credit_account_usage" class="CreditAccount\Loop\CreditInUseLoop" />
-    </loops>
+    <!-- The module declares its services in CreditAccount::configureServices(). -->
 
-    <!-- Alias kept: CreditInUseLoop fetches the manager from the container by this id. -->
-    <services>
-        <service id="creditaccount.manager" alias="CreditAccount\CreditAccountManager" public="true"/>
-    </services>
 </config>
