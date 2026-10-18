@@ -37,7 +37,7 @@ Lets a logged-in customer apply or remove their credit as a discount during chec
 
 The component renders nothing when the customer has no available credit, so it is safe to mount unconditionally. The `Flexy:Checkout:Summary` component already listens to `syncSummary`, so the applied discount and the updated total appear automatically.
 
-> The legacy Smarty hooks (`account.bottom`, `order-invoice.before-discount`) and the `/creditAccount/*` routes are kept for backward compatibility, but the Flexy front-office uses the components above.
+> The `/creditAccount/*` routes are kept for backward compatibility, but the Flexy front-office uses the components above.
 
 ## How to use it
 
@@ -45,24 +45,13 @@ In your back-office, on each customer edition page you can add a new credit acco
 
 ## Integration
 
-In back-office, the module places itself in the `account.bottom` hook, which is in the customer details page.
-
-Two loops are available with this module. One for the credit account history and the other one for the current credit account.
+In back-office, the module places itself in the `customer.edit` hook, which is in the customer details page.
 
 A route exists allowing customer to consume his credit account, within the limits of order total, excluded shipping. You just have to call the ```/creditAccount/use``` and the controller will find the credit account of the current customer and put the available amount in the discount amount.
 
 To cancel the use of credit account, use the ```/creditAccount/cancel``` route.
 
 Invoking these routes will redirect the customer to the ```order.invoice``` route.
-
-The module creates a hook, `order-invoice.before-discount`, where the code which allows your customer to use their credit is inserted.
-You have to put the hook in the `order-invoice.html` template file, just before the "Discount" block for example. 
-
-### Code to insert in the `order-invoice.html` file in your template:
-
-```smarty
-{hook name='order-invoice.before-discount'}
-```
 
 ## Expiration
 Since version 1.3.0 of this module you can enable expiration of credit.   
@@ -73,106 +62,9 @@ Expiration is checked each time the customer add an item in cart but if you want
 
 ### Hooks
 
-The module uses the front office `account.bottom` hook to display account history in the customer "My Account" page.
-
-It also uses the `following back-office hooks 
-- `account.bottom` to display customer account history in customer details.
+The module uses the following back-office hooks:
+- `customer.edit` to display the customer credit account in customer details.
 - `order-edit.after-order-product-list` to display in order detail the entries added to a credit account by the order.
-
-It creates a `order-invoice.before-discount` which has to be inserted in the `order-invoice.html` template file.
-
-## Loops
-
-### credit_account_history loop
-
-List the credit account history for a specified credit account.
-
-#### Input arguments
-
-* credit_account : credit account id, it's a mandatory parameter.
-* order : an order ID, to get only entries related to this order. 
-
-#### Output variables
-
-* `$CREDIT_AMOUNT` the entry amount, either positive or negative, in the default currency
-* `$ORDER_ID` the related order ID, where an amount has been gained or used. 0 si this entry is a manual operation
-* `$HAS_ORDER_ID` false for a manual operation, true if related to an order
-* `$WHO_DID_IT` name of the administrator who did a manual operation
-* `$CREATE_DATE`
-* `$UPDATE_DATE`
-
-#### Example
-
-```smarty
-{loop type="order" name="order-account-order" id=$order_id customer="*"}
-    {loop type="credit_account" name="credit_account" customer=$CUSTOMER}
-        {loop type="credit_account_history" name="credit_account_history" credit_account=$ID order=$order_id}
-            {if $CREDIT_AMOUNT < 0}
-                {$class='class="text-danger"'}
-            {else}
-                {$class=''}
-            {/if}
-
-            <li>{intl l="New entry in customer credit account : <span %class>%amount</span>" class=$class amount={format_money number=$CREDIT_AMOUNT symbol=$currencySymbol}}</li>
-        {/loop}
-    {/loop}
-    {elseloop rel="order-account-order"}
-        <li>{intl l="No new entry in customer credit account for this order."}</li>
-    {/elseloop}
-{/loop}
-```
-
-### credit_account loop
-
-retrieve the current credit account for a specified customer
-
-#### Input argument
-
-* customer : customer id. If not specified, all credit accounts are returned.
-
-#### Output variables
-
-* $ID : credit account id
-* $CREDIT_AMOUNT current balance in the default currency
-* $CREATE_DATE
-* $UPDATE_DATE
-
-#### Example usage
-
-```smarty
-{loop type="credit_account" name="credit_account" customer={customer attr="id"}}
-    {if $CREDIT_AMOUNT > 0}
-        <tr>
-            <th colspan="2" class="discount">
-                <a class="btn btn-success" href="{url path="/creditAccount/use"}">
-                    {intl l="Use my credit account (%amount available)" amount={format_money number=$CREDIT_AMOUNT symbol=$currencySymbol}}
-                </a>
-            </th>
-        </tr>
-    {/if}
-{/loop}
-```
-
-### credit_account_usage loop
-
-Returns the credit amount used on the current order for the current customer, or nothing if no credit amount is currently in use.
-
-#### Input argument
-
-None.
-
-#### Output variables
-
-- `$AMOUNT_USED` `the amount from credit account used on the current order in the default currency.
-
-#### Example usage
-
-```smarty
-{loop type="credit_account_usage" name="credit-used"}
-    {intl l="You're using %amount from your credit account." amount={format_money number=$AMOUNT_USED symbol=$currencySymbol}}
-    <a class="btn btn-xs btn-warning" href="{url path="/creditAccount/cancel"}">{intl l='Cancel'}</a>
-{/loop}
-```
 
 ## Listeners
 
