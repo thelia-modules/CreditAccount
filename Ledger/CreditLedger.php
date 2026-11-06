@@ -97,6 +97,12 @@ final readonly class CreditLedger
                     throw new InsufficientCreditException($balance, $amount->absolute());
                 }
 
+                $reason = trim(\sprintf(
+                    '%s (capped at the balance: %s of %s)',
+                    $reason,
+                    $balance->toDecimal(),
+                    $amount->absolute()->toDecimal(),
+                ));
                 $amount = $balance->negated();
             }
 
