@@ -32,6 +32,11 @@ class CreditAccount extends BaseModule
     public const DOMAIN = 'creditaccount';
 
     /**
+     * The translation domain of the back-office templates of the module (I18n/backOffice/default).
+     */
+    public const BACK_OFFICE_DOMAIN = 'creditaccount.bo.default';
+
+    /**
      * Sent by a module that credits or debits a customer, with a CreditAccountEvent: 3.x kept, routed to the journal.
      */
     public const CREDIT_ACCOUNT_ADD_AMOUNT = 'creditAccount.addAccount';

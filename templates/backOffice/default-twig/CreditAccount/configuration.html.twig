@@ -1,62 +1,82 @@
-{# Module configuration fragment — no {% extends %} — rendered inside the module-configure page #}
-{% form_theme form with bo_form_themes only %}
+{# Fragment of the module configuration page: no {% extends %}, rendered by the module.configuration hook. #}
+{% set domain = 'creditaccount.bo.default' %}
 
-{# ── Credit accounts list ─────────────────────────────────────────────── #}
-{% set accounts_rows = [] %}
-{% for acc in accounts %}
-    {% set balance_variant = acc.balance == 0 ? 'secondary' : (acc.balance < 0 ? 'danger' : 'success') %}
-    {% set accounts_rows = accounts_rows|merge([{
-        'id': acc.id,
-        'lastname': acc.lastname,
-        'firstname': acc.firstname,
-        'email': acc.email,
-        'balance_html': '<span class="badge bg-' ~ balance_variant ~ '">' ~ (acc.balance|number_format(2, '.', ' ')) ~ ' ' ~ currency_symbol|e ~ '</span>',
-        '_actions': [
-            row_action('edit', 'Edit'|trans, path('admin.customer.update.view', { customer_id: acc.customer_id })),
-        ],
-    }]) %}
-{% endfor %}
+<div data-testid="creditaccount-configuration">
 
-<div class="card mb-4" id="creditaccount-list">
-    <div class="card-header">{{ 'Customer credit accounts'|trans({}, 'creditaccount.bo.default') }}</div>
-    <div class="card-body">
-        {{ component('BoDataTable', {
-            id: 'creditaccount-accounts',
-            columns: [
-                column('id', 'ID'|trans({}, 'creditaccount.bo.default')),
-                column('lastname', 'Lastname'|trans({}, 'creditaccount.bo.default')),
-                column('firstname', 'Firstname'|trans({}, 'creditaccount.bo.default')),
-                column('email', 'Email'|trans({}, 'creditaccount.bo.default')),
-                column_html('balance_html', 'Balance'|trans({}, 'creditaccount.bo.default'), 'end'),
-                column_actions(),
-            ],
-            rows: accounts_rows,
-            emptyMessage: 'No credit account yet.'|trans({}, 'creditaccount.bo.default'),
-        }) }}
-    </div>
-</div>
+    {% if form is null %}
+        <div class="alert alert-info">{{ 'You are not allowed to change the configuration of this module.'|trans({}, domain) }}</div>
+    {% else %}
+        {% form_theme form with bo_form_themes only %}
 
-{# ── Expiration configuration ─────────────────────────────────────────── #}
-<div class="card mb-4" id="creditaccount-config">
-    <div class="card-header">{{ 'CreditAccount configuration'|trans({}, 'creditaccount.bo.default') }}</div>
-    <div class="card-body">
-        <div class="alert alert-info">
-            <p>{{ 'Enable expiration of credit below, then choose the expiration delay (in months).'|trans({}, 'creditaccount.bo.default') }}</p>
-            <p>{{ 'Expiration is checked each time the customer adds an item to the cart; you can also run it as a cron job:'|trans({}, 'creditaccount.bo.default') }}</p>
-            <p><code>php Thelia creditaccount:expiration:check</code></p>
-        </div>
+        {{ form_start(form, {action: path('creditaccount_config_save'), method: 'POST', attr: {id: 'creditaccount-config-form', 'data-testid': 'creditaccount-config-form'}}) }}
+            {{ form_errors(form) }}
 
-        {{ form_start(form, {action: path('creditaccount_config_save'), method: 'POST', attr: {id: 'creditaccount-config-form'}}) }}
-        {% if form.vars.errors|length %}
-            <div class="alert alert-danger">
-                {% for error in form.vars.errors %}{{ error.message }}{% endfor %}
+            <div class="card mb-4">
+                <div class="card-header">{{ 'Expiration'|trans({}, domain) }}</div>
+                <div class="card-body">
+                    <p class="text-body-secondary">{{ 'A credit expires after the delay below, counted from the day it is written. Run the command below every day (cron) to expire the credits that reached their date and to send the warning email:'|trans({}, domain) }}</p>
+                    <p><code>php Thelia credit-account:expire</code></p>
+                    {{ form_row(form.expiration_enabled, {label: 'Credits expire'|trans({}, domain)}) }}
+                    {{ form_row(form.expiration_delay, {label: 'Delay before expiration (months)'|trans({}, domain), attr: {min: 1, max: 120}}) }}
+                    {{ form_row(form.expiration_warning_days, {label: 'Warn the customer this many days before (0: no warning)'|trans({}, domain), attr: {min: 0, max: 365}}) }}
+                </div>
             </div>
-        {% endif %}
-        {{ form_row(form.expiration_enabled) }}
-        {{ form_row(form.expiration_delay) }}
-        <button type="submit" class="btn btn-primary btn-sm">
-            <i class="bi bi-save"></i> {{ 'Save'|trans({}, 'creditaccount.bo.default') }}
-        </button>
+
+            <div class="card mb-4" id="creditaccount-loyalty">
+                <div class="card-header">{{ 'Loyalty'|trans({}, domain) }}</div>
+                <div class="card-body">
+                    <p class="text-body-secondary">{{ 'An order earns credit once it reaches the status below. The earning is taken back if the order is canceled or refunded.'|trans({}, domain) }}</p>
+                    {{ form_row(form.loyalty_trigger_status, {label: 'Earn credit from the status'|trans({}, domain)}) }}
+                    {{ form_row(form.loyalty_mode, {label: 'How an order earns credit'|trans({}, domain)}) }}
+
+                    <div data-credit-mode="percentage">
+                        {{ form_row(form.loyalty_percentage, {label: 'Percentage of the eligible amount'|trans({}, domain)}) }}
+                    </div>
+
+                    <div data-credit-mode="grid" data-testid="creditaccount-grid">
+                        <p class="text-body-secondary">{{ 'An order whose eligible amount is from the minimum (included) up to the maximum (excluded) earns the credit of its tier. Leave the maximum empty for no limit: one tier with no maximum is a grid of one line.'|trans({}, domain) }}</p>
+                        {{ form_errors(form.tiers) }}
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">{{ 'From (included)'|trans({}, domain) }}</th>
+                                        <th scope="col">{{ 'Up to (excluded)'|trans({}, domain) }}</th>
+                                        <th scope="col">{{ 'Credit earned'|trans({}, domain) }}</th>
+                                        <th scope="col"></th>
+                                    </tr>
+                                </thead>
+                                <tbody data-tiers data-next-index="{{ form.tiers|length }}">
+                                    {% for tier in form.tiers %}
+                                        {% include 'CreditAccount/_tier-row.html.twig' with {tier: tier} only %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <template data-tier-prototype>
+                            {% include 'CreditAccount/_tier-row.html.twig' with {tier: form.tiers.vars.prototype} only %}
+                        </template>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-tier-add>
+                            <i class="bi bi-plus-lg" aria-hidden="true"></i> {{ 'Add a tier'|trans({}, domain) }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">{{ 'Exclusions'|trans({}, domain) }}</div>
+                <div class="card-body">
+                    <p class="text-body-secondary">{{ 'What is excluded does not count in the eligible amount of an order.'|trans({}, domain) }}</p>
+                    {{ form_row(form.excluded_categories, {label: 'Excluded categories'|trans({}, domain), attr: {size: 8}}) }}
+                    {{ form_row(form.excluded_products, {label: 'Excluded products (one reference per line)'|trans({}, domain), attr: {rows: 5}}) }}
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" data-testid="creditaccount-config-submit">
+                <i class="bi bi-save" aria-hidden="true"></i> {{ 'Save'|trans({}, domain) }}
+            </button>
         {{ form_end(form) }}
-    </div>
+
+        <script src="{{ module_asset('CreditAccount', 'assets/js/configuration.js') }}"></script>
+    {% endif %}
 </div>

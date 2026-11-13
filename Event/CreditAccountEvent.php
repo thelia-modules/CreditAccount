@@ -1,16 +1,16 @@
 <?php
-/*************************************************************************************/
-/*      This file is part of the Thelia package.                                     */
-/*                                                                                   */
-/*      Copyright (c) OpenStudio                                                     */
-/*      email : dev@thelia.net                                                       */
-/*      web : http://www.thelia.net                                                  */
-/*                                                                                   */
-/*      For the full copyright and license information, please view the LICENSE.txt  */
-/*      file that was distributed with this source code.                             */
-/*************************************************************************************/
 
 declare(strict_types=1);
+
+/*
+ * This file is part of the Thelia package.
+ * http://www.thelia.net
+ *
+ * (c) OpenStudio <info@thelia.net>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace CreditAccount\Event;
 
@@ -18,27 +18,26 @@ use CreditAccount\Model\CreditAccount;
 use Thelia\Core\Event\ActionEvent;
 use Thelia\Model\Customer;
 
-
 /**
- * Class CreditAccountEvent
- * @package CreditAccount\Event
+ * Class CreditAccountEvent.
+ *
  * @author Manuel Raynaud <mraynaud@openstudio.fr>
  * @author  Franck Allimant <franck@cqfdev.fr>
  */
 class CreditAccountEvent extends ActionEvent
 {
     /**
-     * @var
+     * @var int|float|string
      */
     protected $amount;
 
     /**
-     * @var \Thelia\Model\Customer
+     * @var Customer
      */
     protected $customer;
 
     /**
-     * @var CreditAccount $creditAccount
+     * @var CreditAccount
      */
     protected $creditAccount;
 
@@ -56,7 +55,10 @@ class CreditAccountEvent extends ActionEvent
     // Why the amount moves, written in the journal; a default text is written when empty.
     protected string $reason = '';
 
-
+    /**
+     * @param int|float|string $amount
+     * @param int|null         $orderId
+     */
     public function __construct(Customer $customer, $amount, $orderId = null)
     {
         $this->customer = $customer;
@@ -64,36 +66,25 @@ class CreditAccountEvent extends ActionEvent
         $this->orderId = $orderId;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getAmount()
+    public function getAmount(): mixed
     {
         return $this->amount;
     }
 
-
     /**
-     * @return \Thelia\Model\Customer
+     * @return Customer
      */
     public function getCustomer()
     {
         return $this->customer;
     }
 
-
-    /**
-     * @param CreditAccount $creditAccount
-     */
-    public function setCreditAccount(CreditAccount $creditAccount)
+    public function setCreditAccount(CreditAccount $creditAccount): void
     {
         $this->creditAccount = $creditAccount;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getCreditAccount()
+    public function getCreditAccount(): mixed
     {
         return $this->creditAccount;
     }
@@ -108,14 +99,15 @@ class CreditAccountEvent extends ActionEvent
 
     /**
      * @param int $orderId
+     *
      * @return $this
      */
     public function setOrderId($orderId)
     {
         $this->orderId = $orderId;
+
         return $this;
     }
-
 
     /**
      * @return string
@@ -127,11 +119,13 @@ class CreditAccountEvent extends ActionEvent
 
     /**
      * @param string $whoDidIt
+     *
      * @return $this
      */
     public function setWhoDidIt($whoDidIt)
     {
         $this->whoDidIt = $whoDidIt;
+
         return $this;
     }
 

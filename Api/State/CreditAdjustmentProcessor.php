@@ -17,13 +17,10 @@ namespace CreditAccount\Api\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use CreditAccount\Api\Resource\CreditAdjustment;
-use CreditAccount\Ledger\Author;
 use CreditAccount\Ledger\CreditAmount;
 use CreditAccount\Ledger\CreditBalance;
-use CreditAccount\Ledger\CreditExpiry;
-use CreditAccount\Ledger\CreditLedger;
 use CreditAccount\Ledger\InsufficientCreditException;
-use CreditAccount\Ledger\MovementKind;
+use CreditAccount\Ledger\ManualAdjustment;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -39,9 +36,8 @@ final readonly class CreditAdjustmentProcessor implements ProcessorInterface
 {
     public function __construct(
         private CreditCustomerResolver $customers,
-        private CreditLedger $ledger,
+        private ManualAdjustment $adjustment,
         private CreditBalance $balance,
-        private CreditExpiry $expiry,
         private TokenStorageInterface $tokenStorage,
     ) {
     }
@@ -62,14 +58,7 @@ final readonly class CreditAdjustmentProcessor implements ProcessorInterface
         $amount = CreditAmount::ofDecimal((string) $data->amount);
 
         try {
-            $movement = $this->ledger->record(
-                $customerId,
-                $amount,
-                MovementKind::Adjustment,
-                Author::admin($admin),
-                (string) $data->reason,
-                expiresAt: $amount->isPositive() ? $this->expiry->forACreditWrittenAt(new \DateTimeImmutable()) : null,
-            );
+            $movement = $this->adjustment->write($customerId, $amount, (string) $data->reason, $admin);
         } catch (InsufficientCreditException $exception) {
             throw new UnprocessableEntityHttpException(\sprintf('The debit of %s is refused: the balance is %s.', $exception->requested->toDecimal(), $exception->balance->toDecimal()), $exception);
         }
