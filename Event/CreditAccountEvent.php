@@ -53,6 +53,8 @@ class CreditAccountEvent extends ActionEvent
      */
     protected $whoDidIt;
 
+    // Why the amount moves, written in the journal; a default text is written when empty.
+    protected string $reason = '';
 
 
     public function __construct(Customer $customer, $amount, $orderId = null)
@@ -133,4 +135,15 @@ class CreditAccountEvent extends ActionEvent
         return $this;
     }
 
+    public function getReason(): string
+    {
+        return $this->reason;
+    }
+
+    public function setReason(string $reason): static
+    {
+        $this->reason = $reason;
+
+        return $this;
+    }
 }

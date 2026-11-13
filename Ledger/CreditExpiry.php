@@ -23,10 +23,25 @@ final readonly class CreditExpiry
 {
     public const ENABLED = 'expiration_enabled';
     public const DELAY_IN_MONTHS = 'expiration_delay';
+    public const WARNING_DAYS = 'expiration_warning_days';
+    public const DEFAULT_WARNING_DAYS = '30';
+
+    public function isEnabled(): bool
+    {
+        return 'true' === (string) CreditAccount::getConfigValue(self::ENABLED, 'false');
+    }
+
+    /**
+     * How many days before its expiry a customer is warned; 0 turns the warning off.
+     */
+    public function warningDays(): int
+    {
+        return max(0, (int) CreditAccount::getConfigValue(self::WARNING_DAYS, self::DEFAULT_WARNING_DAYS));
+    }
 
     public function forACreditWrittenAt(\DateTimeImmutable $writtenAt): ?\DateTimeImmutable
     {
-        if ('true' !== (string) CreditAccount::getConfigValue(self::ENABLED, 'false')) {
+        if (!$this->isEnabled()) {
             return null;
         }
 

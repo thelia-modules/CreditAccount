@@ -1,0 +1,12 @@
+{{ 'Hello,'|trans({}, 'creditaccount.email.default', locale) }}
+
+{{ 'Part of your store credit expires within %days% days. Use it before then, it cannot be recovered afterwards.'|trans({'%days%': warning_days}, 'creditaccount.email.default', locale) }}
+
+{% for lot in expiring_lots %}
+- {{ 'Amount %amount%, expires on %date%'|trans({'%amount%': lot.amount, '%date%': lot.expires_on}, 'creditaccount.email.default', locale) }}
+{% endfor %}
+
+{{ 'Total expiring: %total%'|trans({'%total%': expiring_total}, 'creditaccount.email.default', locale) }}
+
+{{ 'Kind regards'|trans({}, 'creditaccount.email.default', locale) }},
+{{ 'The %store% team.'|trans({'%store%': config('store_name')}, 'creditaccount.email.default', locale) }}

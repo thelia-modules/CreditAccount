@@ -14,12 +14,16 @@ declare(strict_types=1);
 
 namespace CreditAccount;
 
+use CreditAccount\Expiration\CreditExpirer;
 use CreditAccount\Migration\LegacyLedgerImport;
 use Propel\Runtime\Connection\ConnectionInterface;
 use Propel\Runtime\Propel;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
 use Symfony\Component\Finder\Finder;
 use Thelia\Core\Install\Database;
+use Thelia\Model\LangQuery;
+use Thelia\Model\Message;
+use Thelia\Model\MessageQuery;
 use Thelia\Module\BaseModule;
 
 class CreditAccount extends BaseModule
@@ -35,6 +39,8 @@ class CreditAccount extends BaseModule
     {
         // Every statement is a CREATE TABLE IF NOT EXISTS: activating the module again keeps the journal.
         (new Database($con))->insertSql(null, [__DIR__.'/Config/thelia.sql']);
+
+        $this->ensureMessages($con);
     }
 
     /**
@@ -43,6 +49,8 @@ class CreditAccount extends BaseModule
      */
     public function update($currentVersion, $newVersion, ?ConnectionInterface $con = null): void
     {
+        $this->ensureMessages($con);
+
         $finder = Finder::create()->name('*.sql')->depth(0)->sortByName()->in(__DIR__.'/Config/update');
         $database = new Database($con);
 
@@ -67,6 +75,34 @@ class CreditAccount extends BaseModule
             ->exclude([__DIR__.'/I18n/*', __DIR__.'/Tests/*', __DIR__.'/Model/*', __DIR__.'/Migration/*'])
             ->autowire(true)
             ->autoconfigure(true);
+    }
+
+    /**
+     * Creates the expiration warning message, and gives it the languages of the shop it lacks: a title or a
+     * subject that is there is kept, so is the text a merchant edited. The body is the template of the message,
+     * `templates/email/default/expiration-warning.{html,txt}.twig`.
+     */
+    private function ensureMessages(?ConnectionInterface $con = null): void
+    {
+        $message = MessageQuery::create()->findOneByName(CreditExpirer::WARNING_MESSAGE) ?? (new Message())
+            ->setName(CreditExpirer::WARNING_MESSAGE)
+            ->setHtmlTemplateFileName('expiration-warning.html')
+            ->setTextTemplateFileName('expiration-warning.txt')
+            ->setSecured(0);
+
+        foreach (LangQuery::create()->find($con) as $lang) {
+            $message->setLocale($lang->getLocale());
+
+            if ('' === trim((string) $message->getTitle())) {
+                $message->setTitle('Credit expiration warning');
+            }
+
+            if ('' === trim((string) $message->getSubject())) {
+                $message->setSubject('Your store credit is about to expire');
+            }
+        }
+
+        $message->save($con);
     }
 
     private function allowOneAccountPerCustomer(ConnectionInterface $connection): void
