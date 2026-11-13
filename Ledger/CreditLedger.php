@@ -45,7 +45,11 @@ final readonly class CreditLedger
      *
      * A debit larger than the balance is refused, unless $capAtBalance: the debit is then cut to what is
      * left, and nothing is written when nothing is left (null). A movement tied to an order is written
-     * once: asked again, the ledger hands back the movement already there.
+     * once: asked again, the ledger hands back the movement already there. A spending or its refund is written
+     * once per payment part instead, so an order paid again with another part spends again.
+     *
+     * A connection already inside a transaction (the one of the core while it settles a payment) is written on
+     * without beginning, committing or rolling back anything: a refusal is thrown, and the caller rolls back.
      *
      * @throws InsufficientCreditException a debit the balance does not cover
      */
@@ -59,6 +63,7 @@ final readonly class CreditLedger
         ?\DateTimeInterface $expiresAt = null,
         bool $capAtBalance = false,
         ?ConnectionInterface $connection = null,
+        ?int $paymentPartId = null,
     ): ?CreditMovement {
         $reason = trim($reason);
 
@@ -74,18 +79,36 @@ final readonly class CreditLedger
             throw new \InvalidArgumentException(\sprintf('A movement of kind "%s" belongs to an order.', $kind->value));
         }
 
+        if ($kind->isTiedToAPaymentPart() && null === $paymentPartId) {
+            throw new \InvalidArgumentException(\sprintf('A movement of kind "%s" belongs to a payment part.', $kind->value));
+        }
+
+        if (null !== $paymentPartId && !$kind->isTiedToAPaymentPart()) {
+            throw new \InvalidArgumentException(\sprintf('A movement of kind "%s" does not belong to a payment part.', $kind->value));
+        }
+
         if (null !== $expiresAt && $amount->isNegative()) {
             throw new \InvalidArgumentException('Only a credit expires.');
         }
 
         $connection ??= Propel::getWriteConnection(CreditMovementTableMap::DATABASE_NAME);
-        $connection->beginTransaction();
+        $ownsTheTransaction = !$connection->inTransaction();
+
+        if ($ownsTheTransaction) {
+            $connection->beginTransaction();
+        }
 
         try {
             $this->lockTheAccountOf($customerId, $connection);
 
-            if (null !== $orderId && null !== $existing = $this->movementOfTheOrder($orderId, $kind, $connection)) {
-                $connection->commit();
+            $existing = null !== $paymentPartId
+                ? $this->movementOfThePart($paymentPartId, $kind, $connection)
+                : (null !== $orderId ? $this->movementOfTheOrder($orderId, $kind, $connection) : null);
+
+            if (null !== $existing) {
+                if ($ownsTheTransaction) {
+                    $connection->commit();
+                }
 
                 return $existing;
             }
@@ -107,7 +130,9 @@ final readonly class CreditLedger
             }
 
             if ($amount->isZero()) {
-                $connection->commit();
+                if ($ownsTheTransaction) {
+                    $connection->commit();
+                }
 
                 return null;
             }
@@ -121,14 +146,19 @@ final readonly class CreditLedger
                 ->setAdminId($author->admin?->getId())
                 ->setAuthorName(mb_substr($author->name, 0, 255))
                 ->setOrderId($orderId)
+                ->setPaymentPartId($paymentPartId)
                 ->setExpiresAt($expiresAt);
             $movement->save($connection);
 
             $this->cacheTheBalance($customerId, $balance->plus($amount), $connection);
 
-            $connection->commit();
+            if ($ownsTheTransaction) {
+                $connection->commit();
+            }
         } catch (\Throwable $exception) {
-            $connection->rollBack();
+            if ($ownsTheTransaction) {
+                $connection->rollBack();
+            }
 
             throw $exception;
         }
@@ -161,6 +191,14 @@ final readonly class CreditLedger
     {
         return CreditMovementQuery::create()
             ->filterByOrderId($orderId)
+            ->filterByKind($kind->value)
+            ->findOne($connection);
+    }
+
+    private function movementOfThePart(int $paymentPartId, MovementKind $kind, ConnectionInterface $connection): ?CreditMovement
+    {
+        return CreditMovementQuery::create()
+            ->filterByPaymentPartId($paymentPartId)
             ->filterByKind($kind->value)
             ->findOne($connection);
     }

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS `credit_movement`
     `admin_id` INTEGER,
     `author_name` VARCHAR(255) DEFAULT '' NOT NULL,
     `order_id` INTEGER,
+    `payment_part_id` INTEGER,
     `expires_at` DATETIME,
     `warned_at` DATETIME,
     `created_at` DATETIME,
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS `credit_movement`
     INDEX `idx_credit_movement_expires_at` (`expires_at`),
     INDEX `fi_credit_movement_admin_id` (`admin_id`),
     INDEX `fi_credit_movement_order_id` (`order_id`),
+    INDEX `idx_credit_movement_payment_part_id` (`payment_part_id`),
     CONSTRAINT `fk_credit_movement_customer_id`
         FOREIGN KEY (`customer_id`)
         REFERENCES `customer` (`id`)

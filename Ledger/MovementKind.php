@@ -50,4 +50,13 @@ enum MovementKind: string
             default => false,
         };
     }
+
+    /**
+     * A spending and its refund belong to one part of the payment of an order, which is what they are written
+     * once by: an order may be paid again, with another part.
+     */
+    public function isTiedToAPaymentPart(): bool
+    {
+        return self::Spending === $this || self::SpendingRefund === $this;
+    }
 }

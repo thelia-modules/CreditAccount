@@ -23,7 +23,7 @@
             <email>manu@thelia.net, franck@cqfdev.fr</email>
         </author>
     </authors>
-    <type>classic</type>
+    <type>payment</type>
     <thelia>3.3.0</thelia>
     <stability>other</stability>
 </module>

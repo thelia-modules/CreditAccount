@@ -62,6 +62,14 @@ final readonly class CreditCartUsage
         CreditCartUsageQuery::create()->filterByCartId($cart->getId())->delete();
     }
 
+    /**
+     * Forgets the choice of the cart an order was placed from, once the order is paid: the credit it held is spent.
+     */
+    public function withdrawFromCartId(int $cartId): void
+    {
+        CreditCartUsageQuery::create()->filterByCartId($cartId)->delete();
+    }
+
     public function amountOn(Cart $cart): CreditAmount
     {
         $usage = CreditCartUsageQuery::create()->findPk($cart->getId());

@@ -14,11 +14,14 @@ declare(strict_types=1);
 
 namespace CreditAccount\Loyalty;
 
+use CreditAccount\CreditAccount;
 use CreditAccount\Ledger\CreditAmount;
 use CreditAccount\Model\CreditLoyaltyExcludedCategoryQuery;
 use CreditAccount\Model\CreditLoyaltyExcludedProductQuery;
+use Thelia\Domain\Payment\Enum\OrderPaymentPartState;
 use Thelia\Model\CategoryQuery;
 use Thelia\Model\Order;
+use Thelia\Model\OrderPaymentPartQuery;
 use Thelia\Model\OrderProduct;
 use Thelia\Model\OrderProductQuery;
 use Thelia\Model\ProductCategoryQuery;
@@ -26,7 +29,8 @@ use Thelia\Model\ProductQuery;
 
 /**
  * What an order earns on: the lines tax included, without the excluded ones, less their share of the order
- * discount (promotions and credit spent), postage left out. A product is excluded on its own, or through one
+ * discount (promotions, then the credit the buyer paid the order with, settled on its payment parts), postage
+ * left out. A product is excluded on its own, or through one
  * of its categories or a parent of one.
  */
 final readonly class EligibleAmount
@@ -52,9 +56,26 @@ final readonly class EligibleAmount
             return CreditAmount::zero();
         }
 
-        $discount = min(max(0.0, (float) $order->getDiscount()), $goods);
+        $discount = min(max(0.0, (float) $order->getDiscount()) + $this->creditSpentOn($order), $goods);
 
         return CreditAmount::ofFloat($eligible * (1 - $discount / $goods));
+    }
+
+    /**
+     * What the credit paid of the order: its settled payment parts. A part given back, or not settled yet, paid
+     * nothing.
+     */
+    private function creditSpentOn(Order $order): float
+    {
+        $spent = OrderPaymentPartQuery::create()
+            ->filterByOrderId($order->getId())
+            ->filterByPaymentModuleId(CreditAccount::getModuleId())
+            ->filterByState(OrderPaymentPartState::SETTLED->value)
+            ->withColumn('SUM(order_payment_part.amount)', 'Spent')
+            ->select(['Spent'])
+            ->findOne();
+
+        return (float) $spent;
     }
 
     private function taxedTotalOf(OrderProduct $line): float

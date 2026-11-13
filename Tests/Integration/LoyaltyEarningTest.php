@@ -31,9 +31,17 @@ use CreditAccount\Model\CreditLoyaltyExcludedCategory;
 use CreditAccount\Model\CreditLoyaltyExcludedProduct;
 use CreditAccount\Model\CreditLoyaltyTier;
 use CreditAccount\Model\CreditMovementQuery;
+use CreditAccount\Spending\CreditCartUsage;
+use CreditAccount\Spending\CreditPaymentPart;
+use Propel\Runtime\ActiveQuery\Criteria;
 use Thelia\Core\Event\Order\OrderEvent;
+use Thelia\Domain\Module\Payment\PaymentCartContext;
+use Thelia\Domain\Payment\Enum\OrderPaymentPartState;
 use Thelia\Model\Customer;
+use Thelia\Model\Module;
+use Thelia\Model\ModuleQuery;
 use Thelia\Model\Order;
+use Thelia\Model\OrderPaymentPart;
 use Thelia\Model\OrderStatus;
 use Thelia\Model\OrderStatusQuery;
 use Thelia\Test\FixtureFactory;
@@ -66,6 +74,8 @@ final class LoyaltyEarningTest extends IntegrationTestCase
             new LoyaltyCalculator($settings, new EligibleAmount()),
             new EarningTrigger($settings),
             new CreditExpiry(),
+            new CreditCartUsage($this->balance),
+            new CreditPaymentPart($this->ledger, $this->balance, new CreditCartUsage($this->balance), new CreditExpiry(), new PaymentCartContext()),
         );
 
         CreditAccount::setConfigValue(LoyaltySettings::MODE, LoyaltyMode::Percentage->value);
@@ -164,22 +174,89 @@ final class LoyaltyEarningTest extends IntegrationTestCase
         self::assertNull($this->earningOf($off));
     }
 
-    public function testACanceledOrderGivesBackWhatWasSpentAndTakesBackWhatItEarned(): void
+    public function testACanceledOrderTakesBackWhatItEarnedAndLeavesTheSpendingToItsPaymentPart(): void
     {
         $customer = $this->customer();
         $this->ledger->record((int) $customer->getId(), CreditAmount::ofDecimal('10'), MovementKind::Adjustment, Author::system(), 'Welcome');
         $order = $this->order(['100'], customer: $customer);
-        $this->ledger->record((int) $customer->getId(), CreditAmount::ofDecimal('-10'), MovementKind::Spending, Author::customer(), orderId: (int) $order->getId());
         $this->moveTo($order, OrderStatus::CODE_PAID);
-        self::assertSame('5.00', $this->balance->of((int) $customer->getId())->toDecimal());
+        self::assertSame('15.00', $this->balance->of((int) $customer->getId())->toDecimal());
 
         $this->moveTo($order, OrderStatus::CODE_CANCELED);
         $this->moveTo($order, OrderStatus::CODE_CANCELED);
 
         self::assertSame('10.00', $this->balance->of((int) $customer->getId())->toDecimal(), 'Back to the balance before the order.');
-        self::assertSame('10.00', $this->amountOf($order, MovementKind::SpendingRefund));
+        self::assertNull($this->amountOf($order, MovementKind::SpendingRefund), 'The credit spent is given back by the payment part, when the core releases it.');
         self::assertSame('-5.00', $this->amountOf($order, MovementKind::EarningReversal), 'A movement of its own, the earning stays.');
         self::assertSame('5.00', $this->earningOf($order));
+    }
+
+    public function testTheCreditThatPaidTheOrderIsDeductedFromTheBaseLikeADiscount(): void
+    {
+        $order = $this->order(['100']);
+        $this->creditPart($order, '30', OrderPaymentPartState::SETTLED);
+
+        $this->moveTo($order, OrderStatus::CODE_PAID);
+
+        self::assertSame('3.50', $this->earningOf($order), '5 % of 100 less the 30 paid with credit.');
+    }
+
+    public function testTheCreditPaidIsDeductedInProportionOfTheLinesThatAreNotExcluded(): void
+    {
+        $excluded = $this->product();
+        (new CreditLoyaltyExcludedProduct())->setProductId($excluded->getId())->save();
+        $order = $this->order([['50', $excluded->getRef()], '50'], discount: '10');
+        $this->creditPart($order, '30', OrderPaymentPartState::SETTLED);
+
+        $this->moveTo($order, OrderStatus::CODE_PAID);
+
+        // 100 of goods, 10 of discount and 30 of credit: the 50 eligible keep 60 % of their value.
+        self::assertSame('1.50', $this->earningOf($order));
+    }
+
+    public function testACreditPartGivenBackOrNotSettledPaidNothing(): void
+    {
+        $released = $this->order(['100']);
+        $this->creditPart($released, '30', OrderPaymentPartState::RELEASED);
+        $pending = $this->order(['100']);
+        $this->creditPart($pending, '30', OrderPaymentPartState::PENDING);
+
+        $this->moveTo($released, OrderStatus::CODE_PAID);
+        $this->moveTo($pending, OrderStatus::CODE_PAID);
+
+        self::assertSame('5.00', $this->earningOf($released));
+        self::assertSame('5.00', $this->earningOf($pending));
+    }
+
+    public function testThePartOfAnotherPaymentMeanIsNotDeducted(): void
+    {
+        $order = $this->order(['100']);
+        $this->creditPart($order, '30', OrderPaymentPartState::SETTLED, ModuleQuery::create()->filterById(CreditAccount::getModuleId(), Criteria::NOT_EQUAL)->findOne());
+
+        $this->moveTo($order, OrderStatus::CODE_PAID);
+
+        self::assertSame('5.00', $this->earningOf($order));
+    }
+
+    public function testPayingAnOrderForgetsTheAmountChosenOnItsCartAndNothingElse(): void
+    {
+        $customer = $this->customer();
+        $this->ledger->record((int) $customer->getId(), CreditAmount::ofDecimal('50'), MovementKind::Adjustment, Author::system(), 'Welcome');
+        $cart = $this->factory->cart($customer);
+        $other = $this->factory->cart($customer);
+        $usage = new CreditCartUsage($this->balance);
+        $usage->set($cart, CreditAmount::ofDecimal('10'));
+        $usage->set($other, CreditAmount::ofDecimal('20'));
+        $order = $this->order(['100'], customer: $customer);
+        $order->setCartId($cart->getId())->save();
+
+        $this->moveTo($order, OrderStatus::CODE_NOT_PAID);
+        self::assertSame('10.00', $usage->amountOn($cart)->toDecimal(), 'Unpaid, the order may be presented again.');
+
+        $this->moveTo($order, OrderStatus::CODE_PAID);
+
+        self::assertTrue($usage->amountOn($cart)->isZero());
+        self::assertSame('20.00', $usage->amountOn($other)->toDecimal());
     }
 
     public function testTheEarningTakenBackStopsAtTheBalanceAndSaysWhatWasNot(): void
@@ -225,6 +302,17 @@ final class LoyaltyEarningTest extends IntegrationTestCase
         }
 
         return $order;
+    }
+
+    private function creditPart(Order $order, string $amount, OrderPaymentPartState $state, ?Module $module = null): void
+    {
+        (new OrderPaymentPart())
+            ->setOrderId($order->getId())
+            ->setPaymentModuleId($module?->getId() ?? CreditAccount::getModuleId())
+            ->setAmount($amount)
+            ->setState($state->value)
+            ->setPosition(0)
+            ->save();
     }
 
     private function moveTo(Order $order, string $statusCode): void

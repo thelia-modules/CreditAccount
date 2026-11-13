@@ -14,7 +14,9 @@
         <behavior name="timestampable"/>
     </table>
 
-    <!-- The journal: the balance of a customer is the sum of their movements, never a value written apart. -->
+    <!-- The journal: the balance of a customer is the sum of their movements, never a value written apart.
+         payment_part_id is the part of the order a spending or its refund belongs to (order_payment_part of the core):
+         the key a spending is written once by, and given back once by. No foreign key: the journal outlives the part. -->
     <table name="credit_movement">
         <column autoIncrement="true" name="id" primaryKey="true" required="true" type="INTEGER" />
         <column name="customer_id" type="INTEGER"/>
@@ -25,6 +27,7 @@
         <column name="admin_id" type="INTEGER"/>
         <column name="author_name" type="VARCHAR" size="255" required="true" defaultValue=""/>
         <column name="order_id" type="INTEGER"/>
+        <column name="payment_part_id" type="INTEGER"/>
         <column name="expires_at" type="TIMESTAMP"/>
         <column name="warned_at" type="TIMESTAMP"/>
         <foreign-key foreignTable="customer" name="fk_credit_movement_customer_id" onDelete="SET NULL" onUpdate="RESTRICT">
@@ -38,6 +41,9 @@
         </foreign-key>
         <index name="idx_credit_movement_customer_id">
             <index-column name="customer_id"/>
+        </index>
+        <index name="idx_credit_movement_payment_part_id">
+            <index-column name="payment_part_id"/>
         </index>
         <index name="idx_credit_movement_expires_at">
             <index-column name="expires_at"/>

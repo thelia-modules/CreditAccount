@@ -10,7 +10,18 @@ Store credit for the customers of a Thelia 3 shop. Version 4.0 requires Thelia 3
 - An administrator can credit or debit a customer by hand, with a reason that is always recorded in the journal and in the administration log.
 - The customer can read the balance and the journal through the API, and the journal is part of the personal data export and of the anonymization.
 
-Spending the credit when paying an order is **coming**: this version does not apply the credit at the payment yet.
+- The customer chooses how much credit to spend on a cart. The module is a payment module (Thelia 3.3, payment in several parts): that amount pays its share of the order, instantly and inside the shop, and a payment provider takes the rest. See "Spending the credit" below.
+
+## Spending the credit
+
+- The customer chooses an amount for a cart (API below). Nothing is written in the journal then: the amount is kept with the cart and checked against the balance read at that moment, never cut down to fit.
+- When the order is paid, the core settles the credit part: the module writes the spending in the journal, under a lock on the account. If the balance no longer covers it (another order spent it meanwhile), the payment is refused and nothing is spent.
+- The part never exceeds the total of the order. When it covers the whole order, no provider is asked.
+- When the credit covers only part of the order, the payment provider chosen must charge the balance left (`Thelia\Module\BalanceChargingPaymentModuleInterface`). A provider that charges the whole total cannot be combined with the credit: the order is refused instead of being paid twice.
+- When the order is canceled, the core gives the part back: exactly what it spent is credited again, once, with the expiry of a credit written now.
+- When the order is refunded, the core leaves the part `settled`: the module gives the spending back itself, in full, by the same write as a release. A cancellation after the refund credits nothing a second time.
+- The credit spent on an order is deducted from the amount the order earns on (loyalty), like a discount, in proportion of the lines that are not excluded: 100 of goods and 30 paid with credit earn on 70.
+- The amount chosen is forgotten when the order is paid; until then it stays on the cart, so an unpaid order can be presented to the payment again.
 
 ## Installation
 
@@ -61,9 +72,12 @@ Amounts are decimal strings with two decimals (`"12.50"`); a credit is positive,
 | `GET /api/front/account/credit/movements` | the signed-in customer | their journal, newest first, paginated |
 | `GET /api/admin/credit_account/customers/{customerId}/balance` | administrator, customer right | the balance of that customer |
 | `GET /api/admin/credit_account/customers/{customerId}/movements` | administrator, customer right | their journal, with who wrote each movement |
+| `GET /api/front/account/credit/carts/{cartId}/spending` | the signed-in customer | the amount chosen for one of their carts, and the balance |
+| `PUT /api/front/account/credit/carts/{cartId}/spending` | the signed-in customer | chooses the amount: `{"amount": "30.00"}` |
+| `DELETE /api/front/account/credit/carts/{cartId}/spending` | the signed-in customer | withdraws it |
 | `POST /api/admin/credit_account/customers/{customerId}/adjustments` | administrator, manual credit right | writes a movement: `{"amount": "-3", "reason": "Goodwill"}` |
 
-The reason is required. A debit larger than the balance is refused with a 422: the balance never goes negative.
+The reason is required. A debit larger than the balance is refused with a 422: the balance never goes negative. The same goes for an amount to spend above the balance. The cart of another customer answers 404.
 
 ## Events
 
@@ -101,7 +115,15 @@ Crédit client pour une boutique Thelia 3. La version 4.0 demande Thelia 3.3.
 - Un administrateur peut créditer ou débiter un client à la main, avec un motif toujours consigné dans le journal et dans le journal d'administration.
 - Le client lit son solde et son journal par l'API ; le journal fait partie de l'export des données personnelles et de l'anonymisation.
 
-La dépense du crédit au paiement d'une commande est **à venir** : cette version n'applique pas encore le crédit au paiement.
+- Le client choisit combien de crédit dépenser sur un panier. Le module est un module de paiement (Thelia 3.3, paiement en plusieurs parts) : ce montant règle sa part de la commande, immédiatement et dans la boutique, un prestataire de paiement encaisse le reste.
+
+## Dépense du crédit
+
+- Le montant choisi (API) n'écrit rien dans le journal : il est gardé avec le panier et contrôlé contre le solde, jamais rabaissé.
+- Au paiement de la commande, le cœur règle la part crédit : la dépense est écrite dans le journal sous verrou du compte. Si le solde ne couvre plus la part, le paiement est refusé et rien n'est dépensé.
+- Si le crédit ne couvre qu'une partie de la commande, le prestataire choisi doit encaisser le solde restant (`Thelia\Module\BalanceChargingPaymentModuleInterface`), sinon la commande est refusée.
+- À l'annulation de la commande, le cœur rend la part : exactement ce qu'elle a dépensé est recrédité, une seule fois. Au remboursement, le cœur laisse la part réglée : le module restitue lui-même la dépense en entier, par la même écriture ; une annulation ensuite ne recrédite rien.
+- La part payée en crédit est déduite de la base du gain de fidélité, comme une remise (100 d'articles dont 30 payés en crédit : gain calculé sur 70).
 
 ## Configuration
 

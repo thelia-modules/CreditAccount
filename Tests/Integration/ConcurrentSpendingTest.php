@@ -26,11 +26,12 @@ use Propel\Runtime\Connection\ConnectionInterface;
 use Propel\Runtime\Connection\ConnectionManagerSingle;
 use Propel\Runtime\Propel;
 use Thelia\Model\Customer;
+use Thelia\Model\Order;
 use Thelia\Test\IntegrationTestCase;
 
 /**
- * Two buyers spending the same balance at the same moment, on two real connections: the rows are
- * committed, so this test cleans up after itself instead of rolling back.
+ * Two payment parts spending the same balance at the same moment, on two real connections (what two orders
+ * settled at once do through CreditPaymentPart): the rows are committed, so this test cleans up after itself instead of rolling back.
  */
 final class ConcurrentSpendingTest extends IntegrationTestCase
 {
@@ -38,10 +39,13 @@ final class ConcurrentSpendingTest extends IntegrationTestCase
 
     private ?Customer $customer = null;
 
+    private ?Order $order = null;
+
     protected function tearDown(): void
     {
         if (null !== $this->customer) {
             CreditMovementQuery::create()->filterByCustomerId($this->customer->getId())->delete();
+            $this->order?->delete();
             $this->customer->delete();
         }
 
@@ -56,6 +60,8 @@ final class ConcurrentSpendingTest extends IntegrationTestCase
 
         $ledger = new CreditLedger(new CreditBalance());
         $ledger->record($customerId, CreditAmount::ofDecimal('10'), MovementKind::Adjustment, Author::system(), 'Welcome');
+        $this->order = $factory->order($this->customer);
+        $orderId = (int) $this->order->getId();
 
         $first = $this->openConnection();
         $second = $this->openConnection();
@@ -63,10 +69,10 @@ final class ConcurrentSpendingTest extends IntegrationTestCase
 
         // The first buyer spends 8 and has not committed yet: they hold the account.
         $first->beginTransaction();
-        $ledger->record($customerId, CreditAmount::ofDecimal('-8'), MovementKind::Adjustment, Author::system(), 'First buyer', connection: $first);
+        $ledger->record($customerId, CreditAmount::ofDecimal('-8'), MovementKind::Spending, Author::customer(), 'First part', $orderId, connection: $first, paymentPartId: 9001);
 
         try {
-            $ledger->record($customerId, CreditAmount::ofDecimal('-8'), MovementKind::Adjustment, Author::system(), 'Second buyer', connection: $second);
+            $ledger->record($customerId, CreditAmount::ofDecimal('-8'), MovementKind::Spending, Author::customer(), 'Second part', $orderId, connection: $second, paymentPartId: 9002);
             self::fail('The second debit read the balance while the first one held the account.');
         } catch (\PDOException $exception) {
             self::assertStringContainsString('Lock wait timeout', $exception->getMessage());
@@ -76,7 +82,7 @@ final class ConcurrentSpendingTest extends IntegrationTestCase
 
         // Once the first one is written, the second sees what it left: 2, not 10.
         try {
-            $ledger->record($customerId, CreditAmount::ofDecimal('-8'), MovementKind::Adjustment, Author::system(), 'Second buyer', connection: $second);
+            $ledger->record($customerId, CreditAmount::ofDecimal('-8'), MovementKind::Spending, Author::customer(), 'Second part', $orderId, connection: $second, paymentPartId: 9002);
             self::fail('The second debit spent a balance the first one had already spent.');
         } catch (InsufficientCreditException $exception) {
             self::assertSame('2.00', $exception->balance->toDecimal());

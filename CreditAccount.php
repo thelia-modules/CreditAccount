@@ -17,17 +17,28 @@ namespace CreditAccount;
 use CreditAccount\DependencyInjection\AdminApiResourcesPass;
 use CreditAccount\Expiration\CreditExpirer;
 use CreditAccount\Migration\LegacyLedgerImport;
+use CreditAccount\Spending\CreditPaymentPart;
 use Propel\Runtime\Connection\ConnectionInterface;
 use Propel\Runtime\Propel;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\HttpFoundation\Response;
 use Thelia\Core\Install\Database;
+use Thelia\Model\Cart;
 use Thelia\Model\LangQuery;
 use Thelia\Model\Message;
 use Thelia\Model\MessageQuery;
-use Thelia\Module\BaseModule;
+use Thelia\Model\Order;
+use Thelia\Model\OrderPaymentPart;
+use Thelia\Module\AbstractPaymentModule;
+use Thelia\Module\InstantPaymentModuleInterface;
 
-class CreditAccount extends BaseModule
+/**
+ * The credit of a customer, and a payment means that settles part of an order inside the shop: the amount the
+ * buyer chose to spend on the cart pays its share when the order is paid, a provider that charges a balance
+ * takes the rest (Thelia\Module\InstantPaymentModuleInterface, Thelia 3.3).
+ */
+class CreditAccount extends AbstractPaymentModule implements InstantPaymentModuleInterface
 {
     public const DOMAIN = 'creditaccount';
 
@@ -89,10 +100,51 @@ class CreditAccount extends BaseModule
         }
     }
 
+    public function getAmountAppliedToCart(Cart $cart): string
+    {
+        return $this->paymentPart()->amountAppliedTo($cart);
+    }
+
+    public function settlePart(OrderPaymentPart $part): void
+    {
+        $this->paymentPart()->settle($part);
+    }
+
+    public function releasePart(OrderPaymentPart $part): void
+    {
+        $this->paymentPart()->release($part);
+    }
+
+    /**
+     * Nothing to ask a provider: the core settles the part before it gets here, and does not call this at all
+     * for an order the credit covers whole.
+     */
+    public function pay(Order $order): ?Response
+    {
+        return null;
+    }
+
+    /**
+     * Offered to a signed-in customer who holds credit, on the cart being judged.
+     */
+    public function isValidPayment(): bool
+    {
+        return $this->paymentPart()->isUsableOnTheCartBeingPaid();
+    }
+
+    /**
+     * An unpaid order may be presented to the payment again: the amount applied is read from what the buyer chose
+     * for the cart, which the settlement leaves as it is until the order is paid.
+     */
+    public function supportsPaymentRetry(): bool
+    {
+        return true;
+    }
+
     public static function configureServices(ServicesConfigurator $servicesConfigurator): void
     {
         $servicesConfigurator->load(self::getModuleCode().'\\', __DIR__)
-            ->exclude([__DIR__.'/I18n/*', __DIR__.'/Tests/*', __DIR__.'/Model/*', __DIR__.'/Migration/*', __DIR__.'/DependencyInjection/*'])
+            ->exclude([__DIR__.'/CreditAccount.php', __DIR__.'/I18n/*', __DIR__.'/Tests/*', __DIR__.'/Model/*', __DIR__.'/Migration/*', __DIR__.'/DependencyInjection/*'])
             ->autowire(true)
             ->autoconfigure(true);
     }
@@ -123,6 +175,11 @@ class CreditAccount extends BaseModule
         }
 
         $message->save($con);
+    }
+
+    private function paymentPart(): CreditPaymentPart
+    {
+        return $this->getContainer()->get(CreditPaymentPart::class);
     }
 
     private function allowOneAccountPerCustomer(ConnectionInterface $connection): void
