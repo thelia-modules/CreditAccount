@@ -1,33 +1,89 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <database defaultIdMethod="native" name="TheliaMain" namespace="CreditAccount\Model">
+    <!-- What a customer holds: a cache of the sum of their movements, and the row a spending locks. -->
     <table name="credit_account">
         <column autoIncrement="true" name="id" primaryKey="true" required="true" type="INTEGER" />
-        <column name="amount" type="FLOAT" default="0"/>
         <column name="customer_id" type="INTEGER" required="true"/>
+        <column name="amount" type="DECIMAL" size="16" scale="6" required="true" defaultValue="0"/>
         <foreign-key foreignTable="customer" name="fk_credit_account_customer_id" onDelete="CASCADE" onUpdate="RESTRICT">
             <reference foreign="id" local="customer_id" />
         </foreign-key>
+        <unique name="unq_credit_account_customer_id">
+            <unique-column name="customer_id"/>
+        </unique>
         <behavior name="timestampable"/>
     </table>
-    <table name="credit_account_expiration">
+
+    <!-- The journal: the balance of a customer is the sum of their movements, never a value written apart.
+         payment_part_id is the part of the order a spending or its refund belongs to (order_payment_part of the core):
+         the key a spending is written once by, and given back once by. No foreign key: the journal outlives the part. -->
+    <table name="credit_movement">
         <column autoIncrement="true" name="id" primaryKey="true" required="true" type="INTEGER" />
-        <column name="credit_account_id" type="INTEGER"/>
-        <column name="expiration_start" type="TIMESTAMP"/>
-        <column name="expiration_delay" type="INTEGER"/>
-        <foreign-key foreignTable="credit_account" name="fk_credit_account_expiration_credit_account_id" onDelete="CASCADE" onUpdate="RESTRICT">
-            <reference foreign="id" local="credit_account_id" />
+        <column name="customer_id" type="INTEGER"/>
+        <column name="kind" type="VARCHAR" size="32" required="true"/>
+        <column name="amount" type="DECIMAL" size="16" scale="6" required="true"/>
+        <column name="reason" type="VARCHAR" size="255" required="true" defaultValue=""/>
+        <column name="author_type" type="VARCHAR" size="16" required="true"/>
+        <column name="admin_id" type="INTEGER"/>
+        <column name="author_name" type="VARCHAR" size="255" required="true" defaultValue=""/>
+        <column name="order_id" type="INTEGER"/>
+        <column name="payment_part_id" type="INTEGER"/>
+        <column name="expires_at" type="TIMESTAMP"/>
+        <column name="warned_at" type="TIMESTAMP"/>
+        <foreign-key foreignTable="customer" name="fk_credit_movement_customer_id" onDelete="SET NULL" onUpdate="RESTRICT">
+            <reference foreign="id" local="customer_id" />
         </foreign-key>
+        <foreign-key foreignTable="admin" name="fk_credit_movement_admin_id" onDelete="SET NULL" onUpdate="RESTRICT">
+            <reference foreign="id" local="admin_id" />
+        </foreign-key>
+        <foreign-key foreignTable="order" name="fk_credit_movement_order_id" onDelete="SET NULL" onUpdate="RESTRICT">
+            <reference foreign="id" local="order_id" />
+        </foreign-key>
+        <index name="idx_credit_movement_customer_id">
+            <index-column name="customer_id"/>
+        </index>
+        <index name="idx_credit_movement_payment_part_id">
+            <index-column name="payment_part_id"/>
+        </index>
+        <index name="idx_credit_movement_expires_at">
+            <index-column name="expires_at"/>
+        </index>
+        <behavior name="timestampable">
+            <parameter name="disable_updated_at" value="true"/>
+        </behavior>
     </table>
-    <table name="credit_amount_history">
-        <column autoIncrement="true" name="id" primaryKey="true" required="true" type="INTEGER" />
-        <column name="credit_account_id" type="INTEGER"/>
-        <column name="amount" type="double" default="0"/>
-        <column name="who" size="255" type="VARCHAR" default=""/>
-        <column name="order_id" type="INTEGER" required="true"/>
-        <foreign-key foreignTable="credit_account" name="fk_credit_amount_history_credit_account_id" onDelete="CASCADE" onUpdate="RESTRICT">
-            <reference foreign="id" local="credit_account_id" />
+
+    <!-- What the buyer chose to spend on a cart, checked against the balance when it is set and when the order is placed. -->
+    <table name="credit_cart_usage">
+        <column name="cart_id" type="INTEGER" primaryKey="true" required="true"/>
+        <column name="amount" type="DECIMAL" size="16" scale="6" required="true"/>
+        <foreign-key foreignTable="cart" name="fk_credit_cart_usage_cart_id" onDelete="CASCADE" onUpdate="RESTRICT">
+            <reference foreign="id" local="cart_id" />
         </foreign-key>
         <behavior name="timestampable"/>
     </table>
+
+    <!-- The loyalty grid: what an order worth between min and max earns. -->
+    <table name="credit_loyalty_tier">
+        <column autoIncrement="true" name="id" primaryKey="true" required="true" type="INTEGER" />
+        <column name="min" type="DECIMAL" size="16" scale="6" required="true"/>
+        <column name="max" type="DECIMAL" size="16" scale="6"/>
+        <column name="amount" type="DECIMAL" size="16" scale="6" required="true"/>
+    </table>
+
+    <table name="credit_loyalty_excluded_product">
+        <column name="product_id" type="INTEGER" primaryKey="true" required="true"/>
+        <foreign-key foreignTable="product" name="fk_credit_loyalty_excluded_product_id" onDelete="CASCADE" onUpdate="RESTRICT">
+            <reference foreign="id" local="product_id" />
+        </foreign-key>
+    </table>
+
+    <table name="credit_loyalty_excluded_category">
+        <column name="category_id" type="INTEGER" primaryKey="true" required="true"/>
+        <foreign-key foreignTable="category" name="fk_credit_loyalty_excluded_category_id" onDelete="CASCADE" onUpdate="RESTRICT">
+            <reference foreign="id" local="category_id" />
+        </foreign-key>
+    </table>
+
     <external-schema filename="local/config/schema.xml" referenceOnly="true" />
 </database>

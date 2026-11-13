@@ -1,256 +1,143 @@
-## English Instructions
-
 # Credit account
 
-This module is a base for creating module like sponsorship or assets management.
+Store credit for the customers of a Thelia 3 shop. Version 4.0 requires Thelia 3.3.
 
-##Installation
+## What it does
 
-```
-$ cd local/modules
-$ git clone https://github.com/thelia-modules/CreditAccount
-```
+- Every customer has a credit account. Its balance is the sum of a journal of movements: a credit and a debit are movements, never a value written apart.
+- A customer earns credit on orders (loyalty), by a percentage of the order or from a grid of tiers. The earning is taken back when the order is canceled or refunded.
+- A credit can expire after a delay, with a warning email before it does.
+- An administrator can credit or debit a customer by hand, with a reason that is always recorded in the journal and in the administration log.
+- The customer can read the balance and the journal through the API, and the journal is part of the personal data export and of the anonymization.
 
-You could also download the zip from github.
+- The customer chooses how much credit to spend on a cart. The module is a payment module (Thelia 3.3, payment in several parts): that amount pays its share of the order, instantly and inside the shop, and a payment provider takes the rest. See "Spending the credit" below.
 
-After that, you just have to activate the module in your back-office.
+## Spending the credit
 
-## Thelia 3 — Flexy front-office components
+- The customer chooses an amount for a cart (API below). Nothing is written in the journal then: the amount is kept with the cart and checked against the balance read at that moment, never cut down to fit.
+- When the order is paid, the core settles the credit part: the module writes the spending in the journal, under a lock on the account. If the balance no longer covers it (another order spent it meanwhile), the payment is refused and nothing is spent.
+- The part never exceeds the total of the order. When it covers the whole order, no provider is asked.
+- When the credit covers only part of the order, the payment provider chosen must charge the balance left (`Thelia\Module\BalanceChargingPaymentModuleInterface`). A provider that charges the whole total cannot be combined with the credit: the order is refused instead of being paid twice.
+- When the order is canceled, the core gives the part back: exactly what it spent is credited again, once, with the expiry of a credit written now.
+- When the order is refunded, the core leaves the part `settled`: the module gives the spending back itself, in full, by the same write as a release. A cancellation after the refund credits nothing a second time.
+- The credit spent on an order is deducted from the amount the order earns on (loyalty), like a discount, in proportion of the lines that are not excluded: 100 of goods and 30 paid with credit earn on 70.
+- The amount chosen is forgotten when the order is paid; until then it stays on the cart, so an unpaid order can be presented to the payment again.
 
-On the Thelia 3 (twig branch) front-office, the Flexy theme has **no front hook system**: components must be mounted explicitly in the theme templates. This module ships two ready-to-use components (namespace `@CreditAccountModule`).
-
-### `CreditAccount:Balance` (TwigComponent)
-
-Displays the current customer's credit balance. Mount it on the customer account page:
-
-```twig
-{{ component('CreditAccount:Balance') }}
-```
-
-### `CreditAccount:CreditForm` (LiveComponent)
-
-Lets a logged-in customer apply or remove their credit as a discount during checkout. It applies the discount through the cart (`Thelia\Domain\Cart\CartFacade`), recomputes the postage, then emits the `syncSummary` event so the checkout summary re-renders. Mount it in the checkout summary, next to the promo-code form:
-
-```twig
-{{ component('CreditAccount:CreditForm') }}
-```
-
-The component renders nothing when the customer has no available credit, so it is safe to mount unconditionally. The `Flexy:Checkout:Summary` component already listens to `syncSummary`, so the applied discount and the updated total appear automatically.
-
-> The `/creditAccount/*` routes are kept for backward compatibility, but the Flexy front-office uses the components above.
-
-## How to use it
-
-In your back-office, on each customer edition page you can add a new credit account. 
-
-## Integration
-
-In back-office, the module places itself in the `customer.edit` hook, which is in the customer details page.
-
-A route exists allowing customer to consume his credit account, within the limits of order total, excluded shipping. You just have to call the ```/creditAccount/use``` and the controller will find the credit account of the current customer and put the available amount in the discount amount.
-
-To cancel the use of credit account, use the ```/creditAccount/cancel``` route.
-
-Invoking these routes will redirect the customer to the ```order.invoice``` route.
-
-## Expiration
-Since version 1.3.0 of this module you can enable expiration of credit.   
-Just go in the CreditAccount configuration end enable it (it's disabled by default) then you can choose the expiration delay (in months).   
-The date of expiration is computed with the last date of creditation + your expiration delay.  
-Expiration is checked each time the customer add an item in cart but if you want you can set this a command as cron to force expiration check `php Thelia creditaccount:expiration:check`.
-
-
-### Hooks
-
-The module uses the following back-office hooks:
-- `customer.edit` to display the customer credit account in customer details.
-- `order-edit.after-order-product-list` to display in order detail the entries added to a credit account by the order.
-
-## Listeners
-
-This module is a base for creating module like sponsorship or assets management. So some listeners are preconfigured for using it in other modules.
-
-### creditAccount.addAccount
-
-This listener is used for adding an amount to a customer's credit account. You have to dispatch a ```CreditAccount\Event\CreditAccountEvent``` class
-
-#### Example
+## Installation
 
 ```
-//retrieve the dispatcher for using it after. I put it in $dispatcher
+cd local/modules
+git clone https://github.com/thelia-modules/CreditAccount
+```
 
-// retrieve a customer. For the example I retrieve a random customer, obviously not do that in your application
-$customer = \Thelia\Model\CustomerQuery::create()->findOne();
+Then activate the module in the back-office, or with `php Thelia module:refresh && php Thelia module:activate CreditAccount`.
 
-//the amount I want to add to the current customer's credit account
-$amount = 10;
+## Configuration
 
-// Create the event to dispatch
-$event = new \CreditAccount\Event\CreditAccountEvent($customer, $amount)
+Open the module in the back-office (Modules, then Configure). Every setting is on that page:
 
-//dispatch the event
-$dispatcher->dispatch(\CreditAccount\CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $event);
+- **Expiration**: on or off, delay in months, and how many days before the expiry the customer is warned (0 for no warning). A credit expires from the day it is written; turning expiration off does not change the date of the credits already written.
+- **Loyalty**: the order status from which an order earns, then the mode:
+  - none: nothing is earned;
+  - percentage: a percentage of the eligible amount of the order;
+  - grid: an order whose eligible amount is from the minimum of a tier (included) up to its maximum (excluded) earns the amount of that tier. The tiers must not overlap and only the last one may have no maximum. A single tier with no maximum is a valid grid of one line.
+- **Exclusions**: categories and products (by reference) whose lines do not count in the eligible amount of an order.
+
+The module is in the `module.configuration` hook for its configuration page, in `customer.edit` for the customer sheet (balance, paginated journal, manual movement) and in `order-edit.after-order-product-list` for the credit movements of an order. Its script is published with `module_asset()`.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `php Thelia credit-account:expire [--limit=200]` | Warns the customers whose credit is about to expire and expires the credit that reached its date unspent. Does nothing while expiration is off. **Schedule it every day** (cron): nothing else triggers the expiration. |
+| `php Thelia credit-account:recalculate [--fix]` | Compares the balance each account keeps in cache with the sum of its movements, the one that counts. Exits with a failure when they differ; `--fix` rewrites the cache. |
+
+Example of a crontab line:
 
 ```
+15 3 * * * cd /path/to/shop && php Thelia credit-account:expire
+```
+
+## Rights
+
+A manual movement (back-office or API) needs a dedicated administrator right, `module.creditaccount.manual-credit`, granted apart from the customer rights. Reading the balance or the journal of a customer needs the `admin.customer` right. Changing the configuration needs the update right on the module.
+
+## API
+
+Amounts are decimal strings with two decimals (`"12.50"`); a credit is positive, a debit negative.
+
+| Method and path | Who | What |
+|---|---|---|
+| `GET /api/front/account/credit/balance` | the signed-in customer | their balance |
+| `GET /api/front/account/credit/movements` | the signed-in customer | their journal, newest first, paginated |
+| `GET /api/admin/credit_account/customers/{customerId}/balance` | administrator, customer right | the balance of that customer |
+| `GET /api/admin/credit_account/customers/{customerId}/movements` | administrator, customer right | their journal, with who wrote each movement |
+| `GET /api/front/account/credit/carts/{cartId}/spending` | the signed-in customer | the amount chosen for one of their carts, and the balance |
+| `PUT /api/front/account/credit/carts/{cartId}/spending` | the signed-in customer | chooses the amount: `{"amount": "30.00"}` |
+| `DELETE /api/front/account/credit/carts/{cartId}/spending` | the signed-in customer | withdraws it |
+| `POST /api/admin/credit_account/customers/{customerId}/adjustments` | administrator, manual credit right | writes a movement: `{"amount": "-3", "reason": "Goodwill"}` |
+
+The reason is required. A debit larger than the balance is refused with a 422: the balance never goes negative. The same goes for an amount to spend above the balance. The cart of another customer answers 404.
+
+## Events
+
+`creditAccount.addAccount` is still accepted, for the modules written for 3.x (sponsorship, gift card). Dispatch a `CreditAccount\Event\CreditAccountEvent` with the customer and the amount (negative to debit); it is written in the journal as a manual movement, with the reason and the name set on the event if any.
+
+```php
+$event = new \CreditAccount\Event\CreditAccountEvent($customer, 10);
+$dispatcher->dispatch($event, \CreditAccount\CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT);
+```
+
+## Updating from 3.x
+
+Activate the new version: the update runs by itself.
+
+- the history of 3.x is copied into the journal, once; when the balance a 3.x account showed differs from the sum of its history, a carry movement closes the gap, so each customer keeps the amount they saw;
+- the expiry date of a 3.x account is moved onto its credits;
+- an account is now unique per customer;
+- the 3.x tables are read and kept, never written.
+
+Then check the result with `php Thelia credit-account:recalculate`, and schedule `credit-account:expire`.
+
+The Smarty loops, the `/creditAccount/use` and `/creditAccount/cancel` routes and the Open API controller of 3.x are gone, as is the Smarty back-office.
 
 ---
 
-## Instructions en Français
+# Compte crédit
 
-# Crédit client
+Crédit client pour une boutique Thelia 3. La version 4.0 demande Thelia 3.3.
 
-Ce module permet d'ajouter un crédit à chacun de vos clients. Il est aussi nécessaire pour des modules du type Fidélisation ou Gestion des avoirs.
+## Ce que fait le module
 
-##Installation
+- Chaque client a un compte crédit. Son solde est la somme d'un journal de mouvements : un crédit et un débit sont des mouvements, jamais une valeur écrite à part.
+- Un client gagne du crédit sur ses commandes (fidélité), par un pourcentage de la commande ou selon une grille de tranches. Le gain est repris si la commande est annulée ou remboursée.
+- Un crédit peut expirer après un délai, avec un e-mail d'avertissement avant.
+- Un administrateur peut créditer ou débiter un client à la main, avec un motif toujours consigné dans le journal et dans le journal d'administration.
+- Le client lit son solde et son journal par l'API ; le journal fait partie de l'export des données personnelles et de l'anonymisation.
 
-```
-$ cd local/modules
-$ git clone https://github.com/thelia-modules/CreditAccount
-```
+- Le client choisit combien de crédit dépenser sur un panier. Le module est un module de paiement (Thelia 3.3, paiement en plusieurs parts) : ce montant règle sa part de la commande, immédiatement et dans la boutique, un prestataire de paiement encaisse le reste.
 
-Vous pouvez aussi téléchargez le zip depuis Github.
+## Dépense du crédit
 
-Ensuite vous n'avez plus qu'à activer le module dans votre back-office. 
+- Le montant choisi (API) n'écrit rien dans le journal : il est gardé avec le panier et contrôlé contre le solde, jamais rabaissé.
+- Au paiement de la commande, le cœur règle la part crédit : la dépense est écrite dans le journal sous verrou du compte. Si le solde ne couvre plus la part, le paiement est refusé et rien n'est dépensé.
+- Si le crédit ne couvre qu'une partie de la commande, le prestataire choisi doit encaisser le solde restant (`Thelia\Module\BalanceChargingPaymentModuleInterface`), sinon la commande est refusée.
+- À l'annulation de la commande, le cœur rend la part : exactement ce qu'elle a dépensé est recrédité, une seule fois. Au remboursement, le cœur laisse la part réglée : le module restitue lui-même la dépense en entier, par la même écriture ; une annulation ensuite ne recrédite rien.
+- La part payée en crédit est déduite de la base du gain de fidélité, comme une remise (100 d'articles dont 30 payés en crédit : gain calculé sur 70).
 
-## Utilisation
+## Configuration
 
-Dans votre back-office, vous pouvez ajouter pour chaque client un crédit fidélité. Pour cela, rendez-vous sur la page d'édition du compte client. 
+Page de configuration du module dans le back-office (Modules, puis Configurer) : expiration (activation, délai en mois, jours d'avertissement), fidélité (statut déclencheur, mode aucun, pourcentage ou grille de tranches min/max/montant, une tranche unique sans maximum étant une grille d'une ligne) et exclusions par catégorie et par référence de produit.
 
-## Intégration
+## Commandes
 
-Trois boucles sont disponibles pour ce module: une pour l'historique du compte crédit, une pour obtenir le solde du compte, et une pour connaitre l'utilisation du compte sur la commande en cours. 
+- `php Thelia credit-account:expire` : avertit et fait expirer les crédits. **À planifier chaque jour (cron)**.
+- `php Thelia credit-account:recalculate [--fix]` : compare le solde en cache à la somme des mouvements ; `--fix` le réécrit.
 
-Pour permettre au client d'utiliser son crédit, il suffit d'appeler la route ```/creditAccount/use```. Le contrôleur trouvera lui-même le crédit du client en question, et l'ajoutera dans le montant de la réduction. Pour annuler l'utilisation du crédit, utiliser la route ```/creditAccount/cancel```
+## Droits et API
 
-Ce module crée un nouveau point d'accroche, `order-invoice.before-discount`, où le code qui permet à vos clients d'utiliser leur crédit fidélité sera inséré.
-Placez le code de ce point d'accorche dans le fichier `order-invoice.html` de votre template, juste avant le bloc Remise par exemple.
+Un mouvement manuel (back-office ou API) demande le droit dédié `module.creditaccount.manual-credit`, accordé à part des droits client. Les points d'accès de l'API sont listés dans la partie anglaise.
 
-### Code to insert in the `order-invoice.html` file in your template:
+## Mise à jour depuis la 3.x
 
-### Code du point d'accorche à insérer dans le fichier `order-invoice.html` de votre template:
-
-```smarty
-{hook name='order-invoice.before-discount'}
-```
-
-## Boucles
-
-### Boucle credit_account_history
-
-Liste l'historique des operations sur un compte donné
-
-### Paramètres
-
-* credit_account : credit account id, identifiant du compte, paramètre obligatoire
-
-### Résultats
-
-* $CREDIT_AMOUNT
-* $ORDER_ID l'ID de la commande associé, ou 0 si l'operation est manuelle
-* $HAS_ORDER_ID false pour une opération manuelle, true sinon.
-* $WHO_DID_IT nom de l'administrateur pour une opération manuelle.
-* $CREATE_DATE
-* $UPDATE_DATE
-
-### Exemple d'utilisation
-
-```smarty
-{loop type="order" name="order-account-order" id=$order_id customer="*"}
-    {loop type="credit_account" name="credit_account" customer=$CUSTOMER}
-        {loop type="credit_account_history" name="credit_account_history" credit_account=$ID order=$order_id}
-            {if $CREDIT_AMOUNT < 0}
-                {$class='class="text-danger"'}
-            {else}
-                {$class=''}
-            {/if}
-
-            <li>{intl l="New entry in customer credit account : <span %class>%amount</span>" class=$class amount={format_money number=$CREDIT_AMOUNT symbol=$currencySymbol}}</li>
-        {/loop}
-    {/loop}
-    {elseloop rel="order-account-order"}
-        <li>{intl l="No new entry in customer credit account for this order."}</li>
-    {/elseloop}
-{/loop}
-```
-
-### Credit account loop
-
-Récupère le crédit en cours pour un client donné
-
-#### Paramètres
-
-* customer : ID client. Si absente, les informations sur tous les comptes sont retournés.
-
-#### Résultats
-
-* $ID : credit account id, identifiant du compte
-* $CUSTIMER_ID : identifiant du client
-* $CREDIT_AMOUNT : solde du compte
-* $CREATE_DATE
-* $UPDATE_DATE
-
-#### Exemple d'utilisation
-
-```smarty
-{loop type="credit_account" name="credit_account" customer={customer attr="id"}}
-    {if $CREDIT_AMOUNT > 0}
-        <tr>
-            <th colspan="2" class="discount">
-                <a class="btn btn-success" href="{url path="/creditAccount/use"}">
-                    {intl l="Use my credit account (%amount available)" amount={format_money number=$CREDIT_AMOUNT symbol=$currencySymbol}}
-                </a>
-            </th>
-        </tr>
-    {/if}
-{/loop}
-```
-
-### Boucle credit_account_usage
-
-Cette boucle retourne le crédit utilisé sur la commande courant par le client courant, ou rien si le compte n'est pas utilisé sur la commande.
-
-#### Paramètres
-
-Aucun.
-
-#### Résultats
-
-- `$AMOUNT_USED` `the amount from credit account used on the current order in the default currency.
-
-#### Exemple d'utilisation
-
-```smarty
-{loop type="credit_account_usage" name="credit-used"}
-    {intl l="You're using %amount from your credit account." amount={format_money number=$AMOUNT_USED symbol=$currencySymbol}}
-    <a class="btn btn-xs btn-warning" href="{url path="/creditAccount/cancel"}">{intl l='Cancel'}</a>
-{/loop}
-```
-
-
-## Listeners
-
-Ce module est une base pour créer des modules comme Fidélisation, ou Gestion des avoirs. 
-Des "listeners" sont préconfigurés pour être utilisés dans d'autres modules. 
-
-### creditAccount.addAccount
-
-Ce listener est utilisé pour ajouter un montant dans un compte crédit. Vous devez diffuser un évènement instance de ```CreditAccount\Event\CreditAccountEvent```
-
-#### Exemple d'utilisation
-
-```
-//retrieve the dispatcher for using it after. I put it in $dispatcher
-
-// retrieve a customer. For the example I retrieve a random customer, obviously not do that in your application
-$customer = \Thelia\Model\CustomerQuery::create()->findOne();
-
-//the amount I want to add to the current customer's credit account
-$amount = 10;
-
-// Create the event to dispatch
-$event = new \CreditAccount\Event\CreditAccountEvent($customer, $amount)
-
-//dispatch the event
-$dispatcher->dispatch(\CreditAccount\CreditAccount::CREDIT_ACCOUNT_ADD_AMOUNT, $event);
-
-```
+L'activation de la nouvelle version lance la migration automatique : l'historique 3.x est copié dans le journal, un mouvement de report comble l'écart éventuel avec le solde affiché, la date d'expiration passe sur les crédits, et les tables 3.x sont conservées. L'ancien événement `creditAccount.addAccount` reste accepté. Les boucles Smarty, les routes `/creditAccount/use` et `/creditAccount/cancel` et le back-office Smarty ont disparu.

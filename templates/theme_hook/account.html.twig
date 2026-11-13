@@ -1,0 +1,59 @@
+<style>
+    .CreditAccount { margin: 3rem auto; max-width: 56rem; padding: 0 1rem; }
+    .CreditAccount-title { margin: 0 0 1rem; font-size: 1.5rem; }
+    .CreditAccount-balance { display: flex; flex-wrap: wrap; align-items: baseline; gap: .75rem; margin: 0 0 1.5rem; padding: 1rem 1.25rem; border: 1px solid currentColor; border-radius: .5rem; }
+    .CreditAccount-balanceValue { font-size: 1.75rem; font-weight: 700; }
+    .CreditAccount-subtitle { margin: 0 0 .75rem; font-size: 1.125rem; }
+    .CreditAccount-scroll { overflow-x: auto; }
+    .CreditAccount-table { width: 100%; border-collapse: collapse; }
+    .CreditAccount-table th, .CreditAccount-table td { padding: .5rem .75rem; border-bottom: 1px solid rgba(128, 128, 128, .35); text-align: left; vertical-align: top; }
+    .CreditAccount-table .is-amount { text-align: right; white-space: nowrap; }
+    .CreditAccount-amount--negative { font-weight: 600; }
+    .CreditAccount-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1rem; }
+    .CreditAccount-pager a { text-decoration: underline; }
+</style>
+<section id="credit-account" class="CreditAccount" data-testid="credit-account">
+    <h2 class="CreditAccount-title">{{ labels.title }}</h2>
+
+    <p class="CreditAccount-balance">
+        <span>{{ labels.balance }}</span>
+        <strong class="CreditAccount-balanceValue" data-testid="credit-account-balance">{{ format_money(balance, currencyId) }}</strong>
+    </p>
+
+    <h3 class="CreditAccount-subtitle">{{ labels.history }}</h3>
+
+    {% if lines is empty %}
+        <p data-testid="credit-account-empty">{{ labels.empty }}</p>
+    {% else %}
+        <div class="CreditAccount-scroll">
+            <table class="CreditAccount-table">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ labels.date }}</th>
+                        <th scope="col">{{ labels.type }}</th>
+                        <th scope="col">{{ labels.reason }}</th>
+                        <th scope="col" class="is-amount">{{ labels.amount }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for line in lines %}
+                        <tr data-testid="credit-account-line">
+                            <td>{{ format_date(line.date) }}</td>
+                            <td>{{ line.label }}</td>
+                            <td>{{ line.reason }}</td>
+                            <td class="is-amount CreditAccount-amount{{ line.negative ? ' CreditAccount-amount--negative' : '' }}" data-testid="credit-account-line-amount">{{ line.negative ? '' : '+' }}{{ format_money(line.amount, currencyId) }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pages > 1 %}
+            <nav class="CreditAccount-pager" aria-label="{{ labels.navigation }}" data-testid="credit-account-pager">
+                {% if previousUrl %}<a href="{{ previousUrl }}" rel="prev" data-testid="credit-account-previous">{{ labels.previous }}</a>{% else %}<span></span>{% endif %}
+                <span>{{ labels.pages }}</span>
+                {% if nextUrl %}<a href="{{ nextUrl }}" rel="next" data-testid="credit-account-next">{{ labels.next }}</a>{% else %}<span></span>{% endif %}
+            </nav>
+        {% endif %}
+    {% endif %}
+</section>

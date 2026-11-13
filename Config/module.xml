@@ -15,7 +15,7 @@
         <language>fr_FR</language>
         <language>en_US</language>
     </languages>
-    <version>3.1.0</version>
+    <version>4.0.0</version>
     <authors>
         <author>
             <name>Manuel Raynaud, Franck Allimant</name>
@@ -23,7 +23,7 @@
             <email>manu@thelia.net, franck@cqfdev.fr</email>
         </author>
     </authors>
-    <type>classic</type>
-    <thelia>3.0.0</thelia>
+    <type>payment</type>
+    <thelia>3.3.0</thelia>
     <stability>other</stability>
 </module>
