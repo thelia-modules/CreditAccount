@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace CreditAccount;
 
+use CreditAccount\DependencyInjection\AdminApiResourcesPass;
 use CreditAccount\Expiration\CreditExpirer;
 use CreditAccount\Migration\LegacyLedgerImport;
 use Propel\Runtime\Connection\ConnectionInterface;
@@ -34,6 +35,20 @@ class CreditAccount extends BaseModule
      * Sent by a module that credits or debits a customer, with a CreditAccountEvent: 3.x kept, routed to the journal.
      */
     public const CREDIT_ACCOUNT_ADD_AMOUNT = 'creditAccount.addAccount';
+
+    /**
+     * The admin right that guards the manual credit API: a profile is granted it apart from the customer rights.
+     * Lowercase, as the permission check lowercases the code it looks for.
+     */
+    public const MANUAL_CREDIT_RESOURCE = 'module.creditaccount.manual-credit';
+
+    /**
+     * @return list<AdminApiResourcesPass>
+     */
+    public static function getCompilers(): array
+    {
+        return [new AdminApiResourcesPass()];
+    }
 
     public function postActivation(?ConnectionInterface $con = null): void
     {
@@ -72,7 +87,7 @@ class CreditAccount extends BaseModule
     public static function configureServices(ServicesConfigurator $servicesConfigurator): void
     {
         $servicesConfigurator->load(self::getModuleCode().'\\', __DIR__)
-            ->exclude([__DIR__.'/I18n/*', __DIR__.'/Tests/*', __DIR__.'/Model/*', __DIR__.'/Migration/*'])
+            ->exclude([__DIR__.'/I18n/*', __DIR__.'/Tests/*', __DIR__.'/Model/*', __DIR__.'/Migration/*', __DIR__.'/DependencyInjection/*'])
             ->autowire(true)
             ->autoconfigure(true);
     }

@@ -107,5 +107,15 @@ CREATE TABLE IF NOT EXISTS `credit_loyalty_excluded_category`
         ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+# The right that guards the manual credit API, apart from the customer rights. A profile has to find it in the
+# back office before it can be granted it.
+INSERT IGNORE INTO `resource` (`code`, `created_at`, `updated_at`) VALUES ('module.creditaccount.manual-credit', NOW(), NOW());
+
+INSERT IGNORE INTO `resource_i18n` (`id`, `locale`, `title`)
+    SELECT `id`, 'en_US', 'Credit account: manual credit and debit' FROM `resource` WHERE `code` = 'module.creditaccount.manual-credit';
+
+INSERT IGNORE INTO `resource_i18n` (`id`, `locale`, `title`)
+    SELECT `id`, 'fr_FR', 'Compte crédit : crédit et débit manuels' FROM `resource` WHERE `code` = 'module.creditaccount.manual-credit';
+
 # This restores the fkey checks, after having unset them earlier
 SET FOREIGN_KEY_CHECKS = 1;
