@@ -25,4 +25,11 @@ return array(
     'Type' => 'Type',
     'Amount' => 'Amount',
     'Date' => 'Date',
+    'Available on your credit account' => 'Available on your credit account',
+    'Applied to this order' => 'Applied to this order',
+    'Amount to use' => 'Amount to use',
+    'Apply' => 'Apply',
+    'Withdraw' => 'Withdraw',
+    'Enter an amount above zero, with at most two decimals.' => 'Enter an amount above zero, with at most two decimals.',
+    'Your credit account only holds %balance%.' => 'Your credit account only holds %balance%.',
 );
