@@ -120,6 +120,7 @@ final class BackOfficeScreensTest extends WebIntegrationTestCase
             'expiration_enabled' => '1',
             'expiration_delay' => '12',
             'expiration_warning_days' => '15',
+            'purge_detached_after_years' => '7',
             'loyalty_trigger_status' => OrderStatus::CODE_SENT,
             'loyalty_mode' => 'grid',
             'tiers' => [
@@ -137,6 +138,7 @@ final class BackOfficeScreensTest extends WebIntegrationTestCase
         self::assertTrue($settings['expiration_enabled']);
         self::assertSame(12, $settings['expiration_delay']);
         self::assertSame(15, $settings['expiration_warning_days']);
+        self::assertSame(7, $settings['purge_detached_after_years']);
         self::assertSame(OrderStatus::CODE_SENT, $settings['loyalty_trigger_status']);
         self::assertSame('grid', $settings['loyalty_mode']);
         self::assertSame([['min' => '0.00', 'max' => '100.00', 'amount' => '2.00'], ['min' => '100.00', 'max' => null, 'amount' => '10.50']], $settings['tiers']);
@@ -317,6 +319,7 @@ final class BackOfficeScreensTest extends WebIntegrationTestCase
         return $overrides + [
             'expiration_delay' => '18',
             'expiration_warning_days' => '30',
+            'purge_detached_after_years' => '10',
             'loyalty_trigger_status' => OrderStatus::CODE_PAID,
             'loyalty_mode' => 'none',
             'loyalty_percentage' => '',

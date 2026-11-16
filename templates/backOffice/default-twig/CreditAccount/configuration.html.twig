@@ -64,6 +64,14 @@
             </div>
 
             <div class="card mb-4">
+                <div class="card-header">{{ 'Retention'|trans({}, domain) }}</div>
+                <div class="card-body">
+                    <p class="text-body-secondary">{{ 'The maintenance purge (php Thelia maintenance:purge) deletes the movements already detached from a customer, by anonymization, once they are older than this number of years. A movement of an existing customer is never deleted.'|trans({}, domain) }}</p>
+                    {{ form_row(form.purge_detached_after_years, {label: 'Purge detached movements after (years, 0: never)'|trans({}, domain), attr: {min: 0, max: 100}}) }}
+                </div>
+            </div>
+
+            <div class="card mb-4">
                 <div class="card-header">{{ 'Exclusions'|trans({}, domain) }}</div>
                 <div class="card-body">
                     <p class="text-body-secondary">{{ 'What is excluded does not count in the eligible amount of an order.'|trans({}, domain) }}</p>

@@ -69,7 +69,7 @@ final readonly class ConfigurationController
     /**
      * @param array<string, mixed> $data
      *
-     * @return array{expiration_enabled: bool, expiration_delay: int, expiration_warning_days: int, loyalty_trigger_status: string, loyalty_mode: string, loyalty_percentage: ?string, tiers: list<array{min: string, max: ?string, amount: string}>, excluded_categories: list<int>, excluded_products: string}
+     * @return array{expiration_enabled: bool, expiration_delay: int, expiration_warning_days: int, purge_detached_after_years: int, loyalty_trigger_status: string, loyalty_mode: string, loyalty_percentage: ?string, tiers: list<array{min: string, max: ?string, amount: string}>, excluded_categories: list<int>, excluded_products: string}
      */
     private function settingsOf(array $data): array
     {
@@ -79,6 +79,7 @@ final readonly class ConfigurationController
             'expiration_enabled' => (bool) $data['expiration_enabled'],
             'expiration_delay' => (int) $data['expiration_delay'],
             'expiration_warning_days' => (int) $data['expiration_warning_days'],
+            'purge_detached_after_years' => (int) $data['purge_detached_after_years'],
             'loyalty_trigger_status' => (string) $data['loyalty_trigger_status'],
             'loyalty_mode' => (string) $data['loyalty_mode'],
             'loyalty_percentage' => '' === $percentage ? null : $percentage,

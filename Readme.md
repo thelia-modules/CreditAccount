@@ -37,6 +37,7 @@ Then activate the module in the back-office, or with `php Thelia module:refresh 
 Open the module in the back-office (Modules, then Configure). Every setting is on that page:
 
 - **Expiration**: on or off, delay in months, and how many days before the expiry the customer is warned (0 for no warning). A credit expires from the day it is written; turning expiration off does not change the date of the credits already written.
+- **Retention**: after how many years (default 10, 0 for never) the movements already detached from a customer by anonymization are deleted by `php Thelia maintenance:purge`. A movement of an existing customer is never deleted, so no balance changes.
 - **Loyalty**: the order status from which an order earns, then the mode:
   - none: nothing is earned;
   - percentage: a percentage of the eligible amount of the order;

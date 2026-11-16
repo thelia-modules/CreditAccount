@@ -25,6 +25,7 @@ use CreditAccount\Model\CreditLoyaltyExcludedProductQuery;
 use CreditAccount\Model\CreditLoyaltyTier;
 use CreditAccount\Model\CreditLoyaltyTierQuery;
 use CreditAccount\Model\Map\CreditLoyaltyTierTableMap;
+use CreditAccount\Privacy\DetachedMovementPurger;
 use Propel\Runtime\ActiveQuery\Criteria;
 use Propel\Runtime\Propel;
 use Thelia\Model\CategoryQuery;
@@ -38,7 +39,7 @@ use Thelia\Model\ProductQuery;
  * loyalty keys of the module configuration, the tiers of the grid and the exclusions.
  *
  * @phpstan-type Tier array{min: string, max: ?string, amount: string}
- * @phpstan-type Settings array{expiration_enabled: bool, expiration_delay: int, expiration_warning_days: int, loyalty_trigger_status: string, loyalty_mode: string, loyalty_percentage: ?string, tiers: list<Tier>, excluded_categories: list<int>, excluded_products: string}
+ * @phpstan-type Settings array{expiration_enabled: bool, expiration_delay: int, expiration_warning_days: int, purge_detached_after_years: int, loyalty_trigger_status: string, loyalty_mode: string, loyalty_percentage: ?string, tiers: list<Tier>, excluded_categories: list<int>, excluded_products: string}
  */
 final readonly class CreditConfiguration
 {
@@ -52,6 +53,7 @@ final readonly class CreditConfiguration
     public function __construct(
         private CreditExpiry $expiry,
         private LoyaltySettings $loyalty,
+        private DetachedMovementPurger $purger,
     ) {
     }
 
@@ -84,6 +86,7 @@ final readonly class CreditConfiguration
             'expiration_enabled' => $this->expiry->isEnabled(),
             'expiration_delay' => max(1, (int) CreditAccount::getConfigValue(CreditExpiry::DELAY_IN_MONTHS, (string) self::DEFAULT_DELAY_IN_MONTHS)),
             'expiration_warning_days' => $this->expiry->warningDays(),
+            'purge_detached_after_years' => $this->purger->retentionYears(),
             'loyalty_trigger_status' => $this->loyalty->triggerStatusCode(),
             'loyalty_mode' => $this->loyalty->mode()->value,
             'loyalty_percentage' => '0' === $percentage ? null : $percentage,
@@ -109,6 +112,7 @@ final readonly class CreditConfiguration
             CreditAccount::setConfigValue(CreditExpiry::ENABLED, $settings['expiration_enabled'] ? 'true' : 'false');
             CreditAccount::setConfigValue(CreditExpiry::DELAY_IN_MONTHS, (string) $settings['expiration_delay']);
             CreditAccount::setConfigValue(CreditExpiry::WARNING_DAYS, (string) $settings['expiration_warning_days']);
+            CreditAccount::setConfigValue(DetachedMovementPurger::RETENTION_YEARS, (string) $settings['purge_detached_after_years']);
             CreditAccount::setConfigValue(LoyaltySettings::TRIGGER_STATUS, $settings['loyalty_trigger_status']);
             CreditAccount::setConfigValue(LoyaltySettings::MODE, $settings['loyalty_mode']);
             CreditAccount::setConfigValue(LoyaltySettings::PERCENTAGE, $settings['loyalty_percentage'] ?? '0');

@@ -56,6 +56,7 @@ final class ConfigurationType extends AbstractType
             ->add('expiration_enabled', CheckboxType::class, ['required' => false])
             ->add('expiration_delay', IntegerType::class, ['constraints' => [new NotBlank(), new Range(min: 1, max: 120)]])
             ->add('expiration_warning_days', IntegerType::class, ['constraints' => [new NotBlank(), new Range(min: 0, max: 365)]])
+            ->add('purge_detached_after_years', IntegerType::class, ['constraints' => [new NotBlank(), new Range(min: 0, max: 100)]])
             ->add('loyalty_trigger_status', ChoiceType::class, ['choices' => $options['status_choices'], 'constraints' => [new NotBlank()]])
             ->add('loyalty_mode', ChoiceType::class, [
                 'choices' => array_column(LoyaltyMode::cases(), 'value', 'value'),
