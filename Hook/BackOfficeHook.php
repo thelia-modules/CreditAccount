@@ -20,6 +20,7 @@ use CreditAccount\BackOffice\ConfigurationForms;
 use CreditAccount\BackOffice\CreditJournal;
 use CreditAccount\Form\AdjustmentType;
 use CreditAccount\Form\ConfigurationType;
+use CreditAccount\Loyalty\LegacyLoyaltyModule;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
@@ -41,6 +42,7 @@ class BackOfficeHook extends BaseHook
         private readonly AdminFlash $flash,
         private readonly FormFactoryInterface $formFactory,
         private readonly RequestStack $requestStack,
+        private readonly LegacyLoyaltyModule $legacyLoyalty,
         ?EventDispatcherInterface $dispatcher = null,
         ?ParserResolver $parserResolver = null,
     ) {
@@ -81,6 +83,7 @@ class BackOfficeHook extends BaseHook
         $event->add($this->render('CreditAccount/configuration.html.twig', [
             'form' => $form?->createView(),
             'can_update' => $canUpdate,
+            'legacy_loyalty_active' => $this->legacyLoyalty->isActive(),
         ]));
     }
 

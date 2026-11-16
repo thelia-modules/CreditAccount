@@ -59,6 +59,7 @@ return [
     'Spent on an order' => 'Dépensé sur une commande',
     'Store credit' => 'Crédit client',
     'Store credit of this order' => 'Crédit client de cette commande',
+    'The Loyalty module is active and credits the orders itself: the earning below is paused, so that an order never earns twice. To use this configuration, deactivate the Loyalty module.' => 'Le module Loyalty est actif et crédite lui-même les commandes : le gain ci-dessous est suspendu, pour qu\'une commande ne gagne jamais deux fois. Pour utiliser cette configuration, désactivez le module Loyalty.',
     'The amount is above 0 and has at most two decimals, such as 25 or 12.50.' => 'Le montant est supérieur à 0 et a au plus deux décimales, par exemple 25 ou 12.50.',
     'The configuration is not saved: check the fields below.' => 'La configuration n\'est pas enregistrée : vérifiez les champs ci-dessous.',
     'The configuration is saved.' => 'La configuration est enregistrée.',

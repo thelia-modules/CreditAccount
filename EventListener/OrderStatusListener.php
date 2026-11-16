@@ -20,6 +20,7 @@ use CreditAccount\Ledger\CreditExpiry;
 use CreditAccount\Ledger\CreditLedger;
 use CreditAccount\Ledger\MovementKind;
 use CreditAccount\Loyalty\EarningTrigger;
+use CreditAccount\Loyalty\LegacyLoyaltyModule;
 use CreditAccount\Loyalty\LoyaltyCalculator;
 use CreditAccount\Model\CreditMovementQuery;
 use CreditAccount\Spending\CreditCartUsage;
@@ -52,6 +53,7 @@ final readonly class OrderStatusListener
         private CreditExpiry $expiry,
         private CreditCartUsage $usage,
         private CreditPaymentPart $paymentPart,
+        private LegacyLoyaltyModule $legacyLoyalty,
     ) {
     }
 
@@ -86,7 +88,8 @@ final readonly class OrderStatusListener
 
     private function earn(Order $order): void
     {
-        if ($this->hasMovement($order, MovementKind::Earning)) {
+        // The Loyalty module of 3.x credits the order by its own event, which the adapter writes in the journal.
+        if ($this->legacyLoyalty->isActive() || $this->hasMovement($order, MovementKind::Earning)) {
             return;
         }
 

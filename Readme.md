@@ -96,6 +96,7 @@ Activate the new version: the update runs by itself.
 - the history of 3.x is copied into the journal, once; when the balance a 3.x account showed differs from the sum of its history, a carry movement closes the gap, so each customer keeps the amount they saw;
 - the expiry date of a 3.x account is moved onto its credits;
 - an account is now unique per customer;
+- the grid of the Loyalty module is copied into the loyalty grid (only if the grid is empty, the mode only if none was chosen; a grid that is not valid here is left out and logged). Its maxima were included, they become excluded by one cent; its single slice mode becomes one tier that credits once. **Deactivate the Loyalty module**: while it is active it credits the orders itself and the earning of this module stays paused, so that an order never earns twice;
 - the 3.x tables are read and kept, never written.
 
 Then check the result with `php Thelia credit-account:recalculate`, and schedule `credit-account:expire`.
@@ -141,4 +142,4 @@ Un mouvement manuel (back-office ou API) demande le droit dédié `module.credit
 
 ## Mise à jour depuis la 3.x
 
-L'activation de la nouvelle version lance la migration automatique : l'historique 3.x est copié dans le journal, un mouvement de report comble l'écart éventuel avec le solde affiché, la date d'expiration passe sur les crédits, et les tables 3.x sont conservées. L'ancien événement `creditAccount.addAccount` reste accepté. Les boucles Smarty, les routes `/creditAccount/use` et `/creditAccount/cancel` et le back-office Smarty ont disparu.
+L'activation de la nouvelle version lance la migration automatique : l'historique 3.x est copié dans le journal, un mouvement de report comble l'écart éventuel avec le solde affiché, la date d'expiration passe sur les crédits, la grille du module Loyalty est reprise dans la grille de fidélité (si elle est vide ; **désactivez ensuite le module Loyalty** : tant qu'il est actif, il crédite lui-même et le gain de ce module reste suspendu, pour éviter le double gain), et les tables 3.x sont conservées. L'ancien événement `creditAccount.addAccount` reste accepté. Les boucles Smarty, les routes `/creditAccount/use` et `/creditAccount/cancel` et le back-office Smarty ont disparu.

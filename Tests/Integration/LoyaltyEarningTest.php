@@ -15,6 +15,8 @@ declare(strict_types=1);
 namespace CreditAccount\Tests\Integration;
 
 use CreditAccount\CreditAccount;
+use CreditAccount\Event\CreditAccountEvent;
+use CreditAccount\EventListener\LegacyCreditListener;
 use CreditAccount\EventListener\OrderStatusListener;
 use CreditAccount\Ledger\Author;
 use CreditAccount\Ledger\CreditAmount;
@@ -24,6 +26,7 @@ use CreditAccount\Ledger\CreditLedger;
 use CreditAccount\Ledger\MovementKind;
 use CreditAccount\Loyalty\EarningTrigger;
 use CreditAccount\Loyalty\EligibleAmount;
+use CreditAccount\Loyalty\LegacyLoyaltyModule;
 use CreditAccount\Loyalty\LoyaltyCalculator;
 use CreditAccount\Loyalty\LoyaltyMode;
 use CreditAccount\Loyalty\LoyaltySettings;
@@ -44,6 +47,7 @@ use Thelia\Model\Order;
 use Thelia\Model\OrderPaymentPart;
 use Thelia\Model\OrderStatus;
 use Thelia\Model\OrderStatusQuery;
+use Thelia\Module\BaseModule;
 use Thelia\Test\FixtureFactory;
 use Thelia\Test\IntegrationTestCase;
 
@@ -76,6 +80,7 @@ final class LoyaltyEarningTest extends IntegrationTestCase
             new CreditExpiry(),
             new CreditCartUsage($this->balance),
             new CreditPaymentPart($this->ledger, $this->balance, new CreditCartUsage($this->balance), new CreditExpiry(), new PaymentCartContext()),
+            new LegacyLoyaltyModule(),
         );
 
         CreditAccount::setConfigValue(LoyaltySettings::MODE, LoyaltyMode::Percentage->value);
@@ -92,6 +97,29 @@ final class LoyaltyEarningTest extends IntegrationTestCase
 
         self::assertSame('4.00', $this->earningOf($order), '5 % of (100 - 20), postage not counted.');
         self::assertSame('4.00', $this->balance->of((int) $order->getCustomerId())->toDecimal());
+    }
+
+    public function testAnOrderDoesNotEarnTwiceWhileTheLoyaltyModuleIsActive(): void
+    {
+        $this->loyaltyModule(BaseModule::IS_ACTIVATED);
+        $order = $this->order(['100']);
+
+        // What the Loyalty module does on the paid order: its own credit, through the 3.x event.
+        (new LegacyCreditListener($this->ledger, new CreditExpiry()))->onAddAmount(new CreditAccountEvent($order->getCustomer(), 7.0, $order->getId()));
+        $this->moveTo($order, OrderStatus::CODE_PAID);
+
+        self::assertNull($this->earningOf($order), 'The earning of this module stays paused.');
+        self::assertSame('7.00', $this->balance->of((int) $order->getCustomerId())->toDecimal(), 'Only the credit of the Loyalty module.');
+    }
+
+    public function testTheEarningResumesOnceTheLoyaltyModuleIsDeactivated(): void
+    {
+        $this->loyaltyModule(BaseModule::IS_NOT_ACTIVATED);
+        $order = $this->order(['100']);
+
+        $this->moveTo($order, OrderStatus::CODE_PAID);
+
+        self::assertSame('5.00', $this->earningOf($order));
     }
 
     public function testTheGridGivesTheAmountOfTheRowTheEligibleAmountFallsIn(): void
@@ -302,6 +330,18 @@ final class LoyaltyEarningTest extends IntegrationTestCase
         }
 
         return $order;
+    }
+
+    private function loyaltyModule(int $activate): void
+    {
+        (new Module())
+            ->setCode(LegacyLoyaltyModule::CODE)
+            ->setFullNamespace('Loyalty\\Loyalty')
+            ->setVersion('3.0.0')
+            ->setType(BaseModule::CLASSIC_MODULE_TYPE)
+            ->setCategory('classic')
+            ->setActivate($activate)
+            ->save();
     }
 
     private function creditPart(Order $order, string $amount, OrderPaymentPartState $state, ?Module $module = null): void

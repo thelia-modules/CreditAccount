@@ -25,6 +25,9 @@
             <div class="card mb-4" id="creditaccount-loyalty">
                 <div class="card-header">{{ 'Loyalty'|trans({}, domain) }}</div>
                 <div class="card-body">
+                    {% if legacy_loyalty_active %}
+                        <div class="alert alert-warning" data-testid="creditaccount-legacy-loyalty">{{ 'The Loyalty module is active and credits the orders itself: the earning below is paused, so that an order never earns twice. To use this configuration, deactivate the Loyalty module.'|trans({}, domain) }}</div>
+                    {% endif %}
                     <p class="text-body-secondary">{{ 'An order earns credit once it reaches the status below. The earning is taken back if the order is canceled or refunded.'|trans({}, domain) }}</p>
                     {{ form_row(form.loyalty_trigger_status, {label: 'Earn credit from the status'|trans({}, domain)}) }}
                     {{ form_row(form.loyalty_mode, {label: 'How an order earns credit'|trans({}, domain)}) }}

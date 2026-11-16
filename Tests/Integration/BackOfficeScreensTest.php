@@ -34,7 +34,9 @@ use Thelia\Model\Admin;
 use Thelia\Model\AdminLogQuery;
 use Thelia\Model\ConfigQuery;
 use Thelia\Model\Customer;
+use Thelia\Model\Module;
 use Thelia\Model\OrderStatus;
+use Thelia\Module\BaseModule;
 use Thelia\Test\FixtureFactory;
 use Thelia\Test\WebIntegrationTestCase;
 use Thelia\Tests\Support\BackOffice\AdminSessionInjector;
@@ -88,6 +90,24 @@ final class BackOfficeScreensTest extends WebIntegrationTestCase
         self::assertCount(1, $crawler->filter('input[name="'.self::CONFIGURATION_FORM.'[_token]"]'));
         self::assertCount(1, $crawler->filter('script[src$="configuration.js"]'), 'The script is published by module_asset().');
         self::assertFileExists(THELIA_WEB_DIR.ltrim((string) parse_url((string) $crawler->filter('script[src$="configuration.js"]')->attr('src'), \PHP_URL_PATH), '/'));
+    }
+
+    public function testTheConfigurationPageWarnsThatTheEarningIsPausedWhileTheLoyaltyModuleIsActive(): void
+    {
+        $crawler = $this->open($this->factory->admin(), self::CONFIGURATION_PAGE);
+        self::assertCount(0, $crawler->filter('[data-testid="creditaccount-legacy-loyalty"]'));
+
+        (new Module())
+            ->setCode('Loyalty')
+            ->setFullNamespace('Loyalty\\Loyalty')
+            ->setVersion('3.0.0')
+            ->setType(BaseModule::CLASSIC_MODULE_TYPE)
+            ->setCategory('classic')
+            ->setActivate(BaseModule::IS_ACTIVATED)
+            ->save();
+
+        $crawler = $this->open($this->factory->admin(), self::CONFIGURATION_PAGE);
+        self::assertCount(1, $crawler->filter('[data-testid="creditaccount-legacy-loyalty"]'));
     }
 
     public function testTheConfigurationFormIsLeftOutForAnAdministratorWhoCannotChangeTheModule(): void

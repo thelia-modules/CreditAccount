@@ -17,6 +17,7 @@ namespace CreditAccount;
 use CreditAccount\DependencyInjection\AdminApiResourcesPass;
 use CreditAccount\Expiration\CreditExpirer;
 use CreditAccount\Migration\LegacyLedgerImport;
+use CreditAccount\Migration\LegacyLoyaltyImport;
 use CreditAccount\Spending\CreditPaymentPart;
 use Propel\Runtime\Connection\ConnectionInterface;
 use Propel\Runtime\Propel;
@@ -76,7 +77,8 @@ class CreditAccount extends AbstractPaymentModule implements InstantPaymentModul
 
     /**
      * Runs every Config/update/<version>.sql newer than the installed version. Crossing 4.0.0 also copies
-     * the 3.x history into the journal, then lets one account per customer exist.
+     * the 3.x history into the journal and the grid of the Loyalty module into the loyalty grid, then lets one
+     * account per customer exist.
      */
     public function update($currentVersion, $newVersion, ?ConnectionInterface $con = null): void
     {
@@ -95,6 +97,7 @@ class CreditAccount extends AbstractPaymentModule implements InstantPaymentModul
             $connection = $con ?? Propel::getWriteConnection('TheliaMain');
 
             (new LegacyLedgerImport())->import($connection);
+            (new LegacyLoyaltyImport())->import($connection);
 
             $this->allowOneAccountPerCustomer($connection);
         }

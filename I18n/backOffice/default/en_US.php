@@ -59,6 +59,7 @@ return [
     'Spent on an order' => 'Spent on an order',
     'Store credit' => 'Store credit',
     'Store credit of this order' => 'Store credit of this order',
+    'The Loyalty module is active and credits the orders itself: the earning below is paused, so that an order never earns twice. To use this configuration, deactivate the Loyalty module.' => 'The Loyalty module is active and credits the orders itself: the earning below is paused, so that an order never earns twice. To use this configuration, deactivate the Loyalty module.',
     'The amount is above 0 and has at most two decimals, such as 25 or 12.50.' => 'The amount is above 0 and has at most two decimals, such as 25 or 12.50.',
     'The configuration is not saved: check the fields below.' => 'The configuration is not saved: check the fields below.',
     'The configuration is saved.' => 'The configuration is saved.',
