@@ -303,7 +303,7 @@ final class CheckoutCreditBlockTest extends IntegrationTestCase
 
         $html = html_entity_decode($this->summaryHook()->render('checkout.summary.bottom', ['summary' => ['total_taxed_price' => 99.9]]));
 
-        self::assertStringContainsString('20.00', $this->lineText($html, 'checkout-summary-credit'));
+        self::assertSame("Paid with your credit account −\u{2060}€20.00", $this->lineText($html, 'checkout-summary-credit'), 'formatted as the theme formats money, the sign kept with the amount');
         self::assertStringContainsString('79.90', $this->lineText($html, 'checkout-summary-left'));
         self::assertTrue($this->getService(RequestStack::class)->getMainRequest()?->attributes->get(PrivateResponseListener::ATTRIBUTE));
     }

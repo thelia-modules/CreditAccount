@@ -21,9 +21,12 @@ use CreditAccount\Ledger\CreditAmount;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Thelia\Core\Hook\Theme\ThemeHookInterface;
+use Thelia\Core\HttpFoundation\Session\Session;
 use Thelia\Core\Security\SecurityContext;
 use Thelia\Domain\Cart\CartFacade;
+use Thelia\Model\Currency;
 use Thelia\Model\Customer;
+use Thelia\Model\Lang;
 use Twig\Environment;
 
 /**
@@ -72,7 +75,12 @@ final readonly class CheckoutSummaryThemeHook implements ThemeHookInterface
 
         $this->requestStack->getMainRequest()?->attributes->set(PrivateResponseListener::ATTRIBUTE, true);
 
+        $session = $this->requestStack->getCurrentRequest()?->getSession();
+
         return $this->twig->render('@CreditAccountModule/theme_hook/checkout-summary.html.twig', [
+            // What the theme formats its own amounts with: the currency of the cart, the language of the visitor.
+            'currency' => $cart->getCurrency()?->getCode() ?: Currency::getDefaultCurrency()->getCode(),
+            'locale' => $session instanceof Session ? $session->getLang()->getLocale() : Lang::getDefaultLanguage()->getLocale(),
             'credit' => CreditAmount::ofDecimal($parts['credit'])->toDecimal(),
             'left' => CreditAmount::ofDecimal($parts['left'])->toDecimal(),
             'texts' => [
