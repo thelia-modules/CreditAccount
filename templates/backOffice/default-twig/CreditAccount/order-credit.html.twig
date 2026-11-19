@@ -1,0 +1,20 @@
+{# Block of the order page, rendered by the order-edit.after-order-product-list hook. #}
+{% set domain = 'creditaccount.bo.default' %}
+
+<div class="card mb-3" data-testid="creditaccount-order">
+    <div class="card-header">{{ 'Store credit of this order'|trans({}, domain) }}</div>
+    <div class="card-body">
+        {% if journal.lines is empty %}
+            <p class="mb-0 text-body-secondary" data-testid="creditaccount-order-empty">{{ 'No credit movement for this order.'|trans({}, domain) }}</p>
+        {% else %}
+            <ul class="list-unstyled mb-0">
+                {% for line in journal.lines %}
+                    <li data-testid="creditaccount-order-line">
+                        {{ line.label }} :
+                        <span class="{{ line.negative ? 'text-danger' : 'text-success' }}">{{ line.amount|number_format(2, '.', ' ') }} {{ journal.currency }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+</div>

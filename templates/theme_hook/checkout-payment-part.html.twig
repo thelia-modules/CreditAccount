@@ -1,0 +1,4 @@
+{# What the module draws in its line of the "Pay part of your order with" block of the payment step
+   (hook checkout.payment.parts): the live component that applies or withdraws an amount of the credit
+   account. A live component is rendered from a template, which gives it its id on the page. #}
+{{ component('CreditAccount:CheckoutCredit') }}

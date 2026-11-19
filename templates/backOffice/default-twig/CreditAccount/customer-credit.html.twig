@@ -1,0 +1,77 @@
+{# Card of the customer sheet, rendered by the customer.edit hook. #}
+{% set domain = 'creditaccount.bo.default' %}
+
+<div class="card mb-4" id="creditaccount-card" data-testid="creditaccount-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>{{ 'Store credit'|trans({}, domain) }}</span>
+        <span class="badge text-bg-{{ journal.balance starts with '-' ? 'danger' : (journal.balance == '0.00' ? 'secondary' : 'success') }}" data-testid="creditaccount-balance">
+            {{ 'Balance'|trans({}, domain) }} : {{ journal.balance|number_format(2, '.', ' ') }} {{ journal.currency }}
+        </span>
+    </div>
+    <div class="card-body">
+
+        {% if form is not null %}
+            {% form_theme form with bo_form_themes only %}
+            {{ form_start(form, {action: path('creditaccount_customer_adjust', {customerId: customer_id}), method: 'POST', attr: {'data-testid': 'creditaccount-adjust-form', class: 'mb-4'}}) }}
+                <h2 class="h6">{{ 'Write a movement'|trans({}, domain) }}</h2>
+                {{ form_errors(form) }}
+                {{ form_row(form.direction, {label: 'Movement'|trans({}, domain)}) }}
+                {{ form_row(form.amount, {label: 'Amount'|trans({}, domain)}) }}
+                {{ form_row(form.reason, {label: 'Reason (required)'|trans({}, domain), attr: {maxlength: 255}}) }}
+                <button type="submit" class="btn btn-primary btn-sm" data-testid="creditaccount-adjust-submit">
+                    <i class="bi bi-check2" aria-hidden="true"></i> {{ 'Write the movement'|trans({}, domain) }}
+                </button>
+            {{ form_end(form) }}
+        {% endif %}
+
+        <h2 class="h6" id="creditaccount-journal">{{ 'Journal'|trans({}, domain) }}</h2>
+        {% if journal.lines is empty %}
+            <p class="text-body-secondary" data-testid="creditaccount-journal-empty">{{ 'No movement yet on this account.'|trans({}, domain) }}</p>
+        {% else %}
+            <div class="table-responsive">
+                <table class="table table-sm align-middle" data-testid="creditaccount-journal">
+                    <thead>
+                        <tr>
+                            <th scope="col">{{ 'Date'|trans({}, domain) }}</th>
+                            <th scope="col">{{ 'Movement'|trans({}, domain) }}</th>
+                            <th scope="col" class="text-end">{{ 'Amount'|trans({}, domain) }}</th>
+                            <th scope="col">{{ 'Reason'|trans({}, domain) }}</th>
+                            <th scope="col">{{ 'By'|trans({}, domain) }}</th>
+                            <th scope="col">{{ 'Order'|trans({}, domain) }}</th>
+                            <th scope="col">{{ 'Expires'|trans({}, domain) }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in journal.lines %}
+                            <tr data-testid="creditaccount-journal-line">
+                                <td>{{ line.date ? line.date|date('Y-m-d H:i') : '' }}</td>
+                                <td>{{ line.label }}</td>
+                                <td class="text-end {{ line.negative ? 'text-danger' : 'text-success' }}">{{ line.amount|number_format(2, '.', ' ') }} {{ journal.currency }}</td>
+                                <td>{{ line.reason }}</td>
+                                <td>{{ line.author }}</td>
+                                <td>
+                                    {% if line.orderId is not null %}
+                                        <a href="{{ path('admin.order.update.view', {order_id: line.orderId}) }}">{{ line.orderReference ?? ('#' ~ line.orderId) }}</a>
+                                    {% endif %}
+                                </td>
+                                <td>{{ line.expiresAt ? line.expiresAt|date('Y-m-d') : '' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if journal.pages > 1 %}
+                <nav aria-label="{{ 'Journal pages'|trans({}, domain) }}" data-testid="creditaccount-pagination">
+                    <ul class="pagination pagination-sm">
+                        {% for number in 1..journal.pages %}
+                            <li class="page-item {{ number == journal.page ? 'active' : '' }}">
+                                <a class="page-link" href="?credit_page={{ number }}#creditaccount-journal">{{ number }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>

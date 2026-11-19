@@ -1,43 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
+/*
+ * This file is part of the Thelia package.
+ * http://www.thelia.net
+ *
+ * (c) OpenStudio <info@thelia.net>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace CreditAccount\Model;
 
 use CreditAccount\Model\Base\CreditAccount as BaseCreditAccount;
-use Propel\Runtime\Connection\ConnectionInterface;
 
 class CreditAccount extends BaseCreditAccount
 {
-    private $updateAmount = 0;
-    private $person = 0;
-    private $orderId = 0;
-
-    public function addAmount($amount, $orderId, $person = 'Customer')
-    {
-        if ($amount !== null) {
-            $amount = (double) $amount;
-
-            $this->updateAmount += $amount;
-            $this->person = $person;
-            $this->orderId = $orderId;
-
-            $this->setAmount($this->getAmount() + $amount);
-        }
-        return $this;
-    }
-
-    public function postSave(?ConnectionInterface $con = null): void
-    {
-        if ($this->updateAmount != 0) {
-            $history =  new CreditAmountHistory();
-
-            $history
-                ->setCreditAccountId($this->getId())
-                ->setAmount($this->updateAmount)
-                ->setWho($this->person)
-                ->setOrderId($this->orderId)
-                ->save($con);
-
-            $this->updateAmount = 0;
-        }
-    }
 }

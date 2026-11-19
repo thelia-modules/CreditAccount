@@ -1,0 +1,20 @@
+{% set domain = 'creditaccount.bo.default' %}
+<tr data-tier-row data-testid="creditaccount-tier-row">
+    <td>
+        {{ form_widget(tier.min, {attr: {'aria-label': 'Minimum order amount'|trans({}, domain)}}) }}
+        {{ form_errors(tier.min) }}
+    </td>
+    <td>
+        {{ form_widget(tier.max, {attr: {'aria-label': 'Maximum order amount'|trans({}, domain)}}) }}
+        {{ form_errors(tier.max) }}
+    </td>
+    <td>
+        {{ form_widget(tier.amount, {attr: {'aria-label': 'Credit earned'|trans({}, domain)}}) }}
+        {{ form_errors(tier.amount) }}
+    </td>
+    <td class="text-end">
+        <button type="button" class="btn btn-outline-danger btn-sm" data-tier-remove>
+            <i class="bi bi-trash" aria-hidden="true"></i> {{ 'Remove'|trans({}, domain) }}
+        </button>
+    </td>
+</tr>

@@ -7,17 +7,15 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- credit_account
 -- ---------------------------------------------------------------------
 
-DROP TABLE IF EXISTS `credit_account`;
-
-CREATE TABLE `credit_account`
+CREATE TABLE IF NOT EXISTS `credit_account`
 (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `amount` FLOAT DEFAULT 0,
     `customer_id` INTEGER NOT NULL,
+    `amount` DECIMAL(16,6) DEFAULT 0 NOT NULL,
     `created_at` DATETIME,
     `updated_at` DATETIME,
     PRIMARY KEY (`id`),
-    INDEX `FI_credit_account_customer_id` (`customer_id`),
+    UNIQUE INDEX `unq_credit_account_customer_id` (`customer_id`),
     CONSTRAINT `fk_credit_account_customer_id`
         FOREIGN KEY (`customer_id`)
         REFERENCES `customer` (`id`)
@@ -26,49 +24,117 @@ CREATE TABLE `credit_account`
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
--- credit_account_expiration
+-- credit_movement
 -- ---------------------------------------------------------------------
 
-DROP TABLE IF EXISTS `credit_account_expiration`;
-
-CREATE TABLE `credit_account_expiration`
+CREATE TABLE IF NOT EXISTS `credit_movement`
 (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `credit_account_id` INTEGER,
-    `expiration_start` DATETIME,
-    `expiration_delay` INTEGER,
+    `customer_id` INTEGER,
+    `kind` VARCHAR(32) NOT NULL,
+    `amount` DECIMAL(16,6) NOT NULL,
+    `reason` VARCHAR(255) DEFAULT '' NOT NULL,
+    `author_type` VARCHAR(16) NOT NULL,
+    `admin_id` INTEGER,
+    `author_name` VARCHAR(255) DEFAULT '' NOT NULL,
+    `order_id` INTEGER,
+    `payment_part_id` INTEGER,
+    `expires_at` DATETIME,
+    `warned_at` DATETIME,
+    `created_at` DATETIME,
     PRIMARY KEY (`id`),
-    INDEX `FI_credit_account_expiration_credit_account_id` (`credit_account_id`),
-    CONSTRAINT `fk_credit_account_expiration_credit_account_id`
-        FOREIGN KEY (`credit_account_id`)
-        REFERENCES `credit_account` (`id`)
+    INDEX `idx_credit_movement_customer_id` (`customer_id`),
+    INDEX `idx_credit_movement_expires_at` (`expires_at`),
+    INDEX `fi_credit_movement_admin_id` (`admin_id`),
+    INDEX `fi_credit_movement_order_id` (`order_id`),
+    INDEX `idx_credit_movement_payment_part_id` (`payment_part_id`),
+    CONSTRAINT `fk_credit_movement_customer_id`
+        FOREIGN KEY (`customer_id`)
+        REFERENCES `customer` (`id`)
         ON UPDATE RESTRICT
-        ON DELETE CASCADE
+        ON DELETE SET NULL,
+    CONSTRAINT `fk_credit_movement_admin_id`
+        FOREIGN KEY (`admin_id`)
+        REFERENCES `admin` (`id`)
+        ON UPDATE RESTRICT
+        ON DELETE SET NULL,
+    CONSTRAINT `fk_credit_movement_order_id`
+        FOREIGN KEY (`order_id`)
+        REFERENCES `order` (`id`)
+        ON UPDATE RESTRICT
+        ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
--- credit_amount_history
+-- credit_cart_usage
 -- ---------------------------------------------------------------------
 
-DROP TABLE IF EXISTS `credit_amount_history`;
-
-CREATE TABLE `credit_amount_history`
+CREATE TABLE IF NOT EXISTS `credit_cart_usage`
 (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `credit_account_id` INTEGER,
-    `amount` DOUBLE DEFAULT 0,
-    `who` VARCHAR(255) DEFAULT '',
-    `order_id` INTEGER NOT NULL,
+    `cart_id` INTEGER NOT NULL,
+    `amount` DECIMAL(16,6) NOT NULL,
     `created_at` DATETIME,
     `updated_at` DATETIME,
-    PRIMARY KEY (`id`),
-    INDEX `FI_credit_amount_history_credit_account_id` (`credit_account_id`),
-    CONSTRAINT `fk_credit_amount_history_credit_account_id`
-        FOREIGN KEY (`credit_account_id`)
-        REFERENCES `credit_account` (`id`)
+    PRIMARY KEY (`cart_id`),
+    CONSTRAINT `fk_credit_cart_usage_cart_id`
+        FOREIGN KEY (`cart_id`)
+        REFERENCES `cart` (`id`)
         ON UPDATE RESTRICT
         ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
+-- credit_loyalty_tier
+-- ---------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `credit_loyalty_tier`
+(
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `min` DECIMAL(16,6) NOT NULL,
+    `max` DECIMAL(16,6),
+    `amount` DECIMAL(16,6) NOT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
+-- credit_loyalty_excluded_product
+-- ---------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `credit_loyalty_excluded_product`
+(
+    `product_id` INTEGER NOT NULL,
+    PRIMARY KEY (`product_id`),
+    CONSTRAINT `fk_credit_loyalty_excluded_product_id`
+        FOREIGN KEY (`product_id`)
+        REFERENCES `product` (`id`)
+        ON UPDATE RESTRICT
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
+-- credit_loyalty_excluded_category
+-- ---------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `credit_loyalty_excluded_category`
+(
+    `category_id` INTEGER NOT NULL,
+    PRIMARY KEY (`category_id`),
+    CONSTRAINT `fk_credit_loyalty_excluded_category_id`
+        FOREIGN KEY (`category_id`)
+        REFERENCES `category` (`id`)
+        ON UPDATE RESTRICT
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+# The right that guards the manual credit API, apart from the customer rights. A profile has to find it in the
+# back office before it can be granted it.
+INSERT IGNORE INTO `resource` (`code`, `created_at`, `updated_at`) VALUES ('module.creditaccount.manual-credit', NOW(), NOW());
+
+INSERT IGNORE INTO `resource_i18n` (`id`, `locale`, `title`)
+    SELECT `id`, 'en_US', 'Credit account: manual credit and debit' FROM `resource` WHERE `code` = 'module.creditaccount.manual-credit';
+
+INSERT IGNORE INTO `resource_i18n` (`id`, `locale`, `title`)
+    SELECT `id`, 'fr_FR', 'Compte crédit : crédit et débit manuels' FROM `resource` WHERE `code` = 'module.creditaccount.manual-credit';
 
 # This restores the fkey checks, after having unset them earlier
 SET FOREIGN_KEY_CHECKS = 1;

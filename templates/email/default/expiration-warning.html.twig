@@ -1,0 +1,22 @@
+{% extends "email-layout.html.twig" %}
+
+{% block browser %}{% endblock %}
+{% block image_header %}{% endblock %}
+{% block pre_header %}{% endblock %}
+
+{% block email_subject %}{{ 'Your store credit is about to expire'|trans({}, 'creditaccount.email.default', locale) }}{% endblock %}
+
+{% block email_title %}{{ 'Your store credit is about to expire'|trans({}, 'creditaccount.email.default', locale) }}{% endblock %}
+
+{% block email_content %}
+    {{ 'Hello,'|trans({}, 'creditaccount.email.default', locale) }}<br /><br />
+    {{ 'Part of your store credit expires within %days% days. Use it before then, it cannot be recovered afterwards.'|trans({'%days%': warning_days}, 'creditaccount.email.default', locale) }}<br /><br />
+    <ul>
+        {% for lot in expiring_lots %}
+            <li>{{ 'Amount %amount%, expires on %date%'|trans({'%amount%': lot.amount, '%date%': lot.expires_on}, 'creditaccount.email.default', locale) }}</li>
+        {% endfor %}
+    </ul>
+    {{ 'Total expiring: %total%'|trans({'%total%': expiring_total}, 'creditaccount.email.default', locale) }}<br /><br />
+    {{ 'Kind regards'|trans({}, 'creditaccount.email.default', locale) }},<br />
+    {{ 'The %store% team.'|trans({'%store%': config('store_name')}, 'creditaccount.email.default', locale) }}
+{% endblock %}
