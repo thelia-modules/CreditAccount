@@ -114,14 +114,25 @@ final class LegacyLoyaltyImportTest extends IntegrationTestCase
         self::assertSame('5', CreditAccount::getConfigValue(LoyaltySettings::PERCENTAGE));
     }
 
-    public function testASingleSliceThatDoesNotDivideEvenlyKeepsFourDecimals(): void
+    public function testASingleSliceThatDoesNotDivideEvenlyIsRoundedToTheTwoDecimalsTheConfigurationTakes(): void
     {
         $this->loyaltyTable();
         $this->singleSlice('30', '1');
 
         (new LegacyLoyaltyImport())->import($this->getPropelConnection());
 
-        self::assertSame('3.3333', CreditAccount::getConfigValue(LoyaltySettings::PERCENTAGE));
+        self::assertSame('3.33', CreditAccount::getConfigValue(LoyaltySettings::PERCENTAGE));
+    }
+
+    public function testASingleSliceWhosePercentageRoundsToZeroIsNotImported(): void
+    {
+        $this->loyaltyTable();
+        $this->singleSlice('1000', '0.01');
+
+        $report = (new LegacyLoyaltyImport())->import($this->getPropelConnection());
+
+        self::assertNotNull($report->skippedBecause);
+        self::assertNull(CreditAccount::getConfigValue(LoyaltySettings::MODE));
     }
 
     public function testTheSingleSliceNeverReplacesTheModeAMerchantAlreadyChose(): void

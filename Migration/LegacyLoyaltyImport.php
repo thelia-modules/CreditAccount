@@ -38,7 +38,8 @@ use Thelia\Model\ModuleQuery;
  * - a tier without a minimum, a maximum or an amount, or that ends before it starts, never matched: it is left out;
  * - the single slice mode credited `credit` for each full `amount` of the cart (a multiple). A grid cannot say
  *   that: it becomes the percentage `credit / amount` (2.50 for each 50.00 is 5 %), set only when the merchant
- *   never chose a mode. A cart of 120.00 then earns 6.00 where Loyalty gave 5.00: the slices become linear.
+ *   never chose a mode, rounded to the two decimals the configuration takes. A cart of 120.00 then earns 6.00
+ *   where Loyalty gave 5.00: the slices become linear.
  */
 final readonly class LegacyLoyaltyImport
 {
@@ -159,13 +160,13 @@ final readonly class LegacyLoyaltyImport
             return $this->skipped('Loyalty has no slice that could earn');
         }
 
-        $percentage = round($credit->cents * 100 / $slice->cents, 4);
+        $percentage = round($credit->cents * 100 / $slice->cents, 2);
 
-        if ($percentage > 100.0) {
-            return $this->skipped(\sprintf('the Loyalty slice credits more than it costs (%s %%)', $percentage));
+        if ($percentage > 100.0 || $percentage <= 0.0) {
+            return $this->skipped(\sprintf('the Loyalty slice gives a percentage the configuration cannot take (%s %%)', $percentage));
         }
 
-        $percentage = rtrim(rtrim(number_format($percentage, 4, '.', ''), '0'), '.');
+        $percentage = rtrim(rtrim(number_format($percentage, 2, '.', ''), '0'), '.');
 
         CreditAccount::setConfigValue(LoyaltySettings::PERCENTAGE, $percentage);
         CreditAccount::setConfigValue(LoyaltySettings::MODE, LoyaltyMode::Percentage->value);
