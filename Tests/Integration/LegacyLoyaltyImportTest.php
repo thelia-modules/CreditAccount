@@ -99,19 +99,54 @@ final class LegacyLoyaltyImportTest extends IntegrationTestCase
         self::assertSame([['30.00', '40.01', '4.00']], $this->tiers());
     }
 
-    public function testTheSingleSliceModeBecomesOneTierWithNoMaximum(): void
+    public function testTheSingleSliceModeBecomesThePercentageOfItsCreditOverItsSlice(): void
     {
         $this->loyaltyTable();
         $this->loyaltyTier(0, 10, 1);
-        ModuleConfigQuery::create()->setConfigValue($this->loyaltyModuleId, 'mode', 'unique');
-        ModuleConfigQuery::create()->setConfigValue($this->loyaltyModuleId, 'unique_slice_amount', '50');
-        ModuleConfigQuery::create()->setConfigValue($this->loyaltyModuleId, 'unique_slice_credit', '2.5');
+        $this->singleSlice('50', '2.5');
 
         $report = (new LegacyLoyaltyImport())->import($this->getPropelConnection());
 
-        self::assertSame(1, $report->importedTiers);
-        self::assertSame([['50.00', null, '2.50']], $this->tiers());
+        self::assertSame(0, $report->importedTiers);
+        self::assertSame('percentage', $report->modeSet);
+        self::assertSame([], $this->tiers());
+        self::assertSame('percentage', CreditAccount::getConfigValue(LoyaltySettings::MODE));
+        self::assertSame('5', CreditAccount::getConfigValue(LoyaltySettings::PERCENTAGE));
+    }
+
+    public function testASingleSliceThatDoesNotDivideEvenlyKeepsFourDecimals(): void
+    {
+        $this->loyaltyTable();
+        $this->singleSlice('30', '1');
+
+        (new LegacyLoyaltyImport())->import($this->getPropelConnection());
+
+        self::assertSame('3.3333', CreditAccount::getConfigValue(LoyaltySettings::PERCENTAGE));
+    }
+
+    public function testTheSingleSliceNeverReplacesTheModeAMerchantAlreadyChose(): void
+    {
+        $this->loyaltyTable();
+        $this->singleSlice('50', '2.5');
+        CreditAccount::setConfigValue(LoyaltySettings::MODE, 'grid');
+
+        $report = (new LegacyLoyaltyImport())->import($this->getPropelConnection());
+
+        self::assertNull($report->modeSet);
         self::assertSame('grid', CreditAccount::getConfigValue(LoyaltySettings::MODE));
+        self::assertNull(CreditAccount::getConfigValue(LoyaltySettings::PERCENTAGE));
+    }
+
+    public function testASingleSliceThatCreditsMoreThanItCostsIsNotImported(): void
+    {
+        $this->loyaltyTable();
+        $this->singleSlice('10', '12');
+
+        $report = (new LegacyLoyaltyImport())->import($this->getPropelConnection());
+
+        self::assertNull($report->modeSet);
+        self::assertNotNull($report->skippedBecause);
+        self::assertNull(CreditAccount::getConfigValue(LoyaltySettings::MODE));
     }
 
     public function testTheModeAMerchantAlreadyChoseIsKept(): void
@@ -175,6 +210,13 @@ final class LegacyLoyaltyImportTest extends IntegrationTestCase
         self::assertSame(0, $report->importedTiers);
         self::assertSame([], $this->tiers());
         self::assertNull(CreditAccount::getConfigValue(LoyaltySettings::MODE));
+    }
+
+    private function singleSlice(string $amount, string $credit): void
+    {
+        ModuleConfigQuery::create()->setConfigValue($this->loyaltyModuleId, 'mode', 'unique');
+        ModuleConfigQuery::create()->setConfigValue($this->loyaltyModuleId, 'unique_slice_amount', $amount);
+        ModuleConfigQuery::create()->setConfigValue($this->loyaltyModuleId, 'unique_slice_credit', $credit);
     }
 
     private function loyaltyTable(): void

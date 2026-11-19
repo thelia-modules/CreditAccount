@@ -96,7 +96,7 @@ Activate the new version: the update runs by itself.
 - the history of 3.x is copied into the journal, once; when the balance a 3.x account showed differs from the sum of its history, a carry movement closes the gap, so each customer keeps the amount they saw;
 - the expiry date of a 3.x account is moved onto its credits;
 - an account is now unique per customer;
-- the grid of the Loyalty module is copied into the loyalty grid (only if the grid is empty, the mode only if none was chosen; a grid that is not valid here is left out and logged). Its maxima were included, they become excluded by one cent; its single slice mode becomes one tier that credits once. **Deactivate the Loyalty module**: while it is active it credits the orders itself and the earning of this module stays paused, so that an order never earns twice;
+- the grid of the Loyalty module is copied into the loyalty grid (only if the grid is empty, the mode only if none was chosen; a grid that is not valid here is left out and logged). Its maxima were included, they become excluded by one cent; its single slice mode becomes the percentage of its credit over its slice (2.50 for each 50.00 is 5 %; a cart of 120.00 then earns 6.00 where Loyalty gave 5.00), set only if no mode was chosen. **Deactivate the Loyalty module**: while it is active it credits the orders itself and the earning of this module stays paused, so that an order never earns twice;
 - the 3.x tables are read and kept, never written.
 
 Then check the result with `php Thelia credit-account:recalculate`, and schedule `credit-account:expire`.

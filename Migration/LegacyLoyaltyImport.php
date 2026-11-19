@@ -37,7 +37,8 @@ use Thelia\Model\ModuleQuery;
  *   maximum is moved up by one cent (the totals are in cents) unless the next tier starts there or before;
  * - a tier without a minimum, a maximum or an amount, or that ends before it starts, never matched: it is left out;
  * - the single slice mode credited `credit` for each full `amount` of the cart (a multiple). A grid cannot say
- *   that: it becomes one tier from `amount` with no maximum, that credits `credit` once.
+ *   that: it becomes the percentage `credit / amount` (2.50 for each 50.00 is 5 %), set only when the merchant
+ *   never chose a mode. A cart of 120.00 then earns 6.00 where Loyalty gave 5.00: the slices become linear.
  */
 final readonly class LegacyLoyaltyImport
 {
@@ -58,7 +59,11 @@ final readonly class LegacyLoyaltyImport
             return $this->skipped('the grid already has tiers');
         }
 
-        $rows = self::SINGLE_SLICE_MODE === $this->loyaltyConfiguration('mode', 'multiple') ? $this->singleSliceRow() : $this->tiersOfTheTable($connection);
+        if (self::SINGLE_SLICE_MODE === $this->loyaltyConfiguration('mode', 'multiple')) {
+            return $this->importSingleSlice();
+        }
+
+        $rows = $this->tiersOfTheTable($connection);
 
         if ([] === $rows) {
             return $this->skipped('Loyalty has no tier that could earn');
@@ -141,21 +146,33 @@ final readonly class LegacyLoyaltyImport
         return $rows;
     }
 
-    /**
-     * @return list<array{min: string, max: ?string, amount: string}>
-     */
-    private function singleSliceRow(): array
+    private function importSingleSlice(): LegacyLoyaltyReport
     {
+        if (null !== CreditAccount::getConfigValue(LoyaltySettings::MODE)) {
+            return $this->skipped('the merchant already chose a loyalty mode');
+        }
+
         $slice = CreditAmount::ofFloat((float) $this->loyaltyConfiguration('unique_slice_amount', '0'));
         $credit = CreditAmount::ofFloat((float) $this->loyaltyConfiguration('unique_slice_credit', '0'));
 
         if (!$slice->isPositive() || !$credit->isPositive()) {
-            return [];
+            return $this->skipped('Loyalty has no slice that could earn');
         }
 
-        Tlog::getInstance()->warning('CreditAccount: Loyalty credited each full slice of the cart; the grid credits once from the first slice. Review the grid.');
+        $percentage = round($credit->cents * 100 / $slice->cents, 4);
 
-        return [['min' => $slice->toDecimal(), 'max' => null, 'amount' => $credit->toDecimal()]];
+        if ($percentage > 100.0) {
+            return $this->skipped(\sprintf('the Loyalty slice credits more than it costs (%s %%)', $percentage));
+        }
+
+        $percentage = rtrim(rtrim(number_format($percentage, 4, '.', ''), '0'), '.');
+
+        CreditAccount::setConfigValue(LoyaltySettings::PERCENTAGE, $percentage);
+        CreditAccount::setConfigValue(LoyaltySettings::MODE, LoyaltyMode::Percentage->value);
+
+        Tlog::getInstance()->warning(\sprintf('CreditAccount: Loyalty credited %s for each full %s of the cart; the loyalty is now %s %% of the eligible amount. Review it.', $credit->toDecimal(), $slice->toDecimal(), $percentage));
+
+        return new LegacyLoyaltyReport(0, LoyaltyMode::Percentage->value, null);
     }
 
     private function loyaltyConfiguration(string $name, string $default): string
