@@ -36,4 +36,6 @@ return array(
     'Withdraw' => 'Retirer',
     'Enter an amount above zero, with at most two decimals.' => 'Saisissez un montant supérieur à zéro, avec au plus deux décimales.',
     'Your credit account only holds %balance%.' => 'Votre compte de fidélité ne contient que %balance%.',
+    'Paid with your credit account' => 'Payé avec votre compte de fidélité',
+    'Left to pay' => 'Reste à payer',
 );

@@ -55,6 +55,11 @@ final class CheckoutCredit
     private const PAYMENT_PARTS_CHANGED = 'PAYMENT_PARTS_CHANGED';
 
     /**
+     * Heard by the checkout summary of Flexy, which then draws again the part of the credit and what is left to pay.
+     */
+    private const SUMMARY_CHANGED = 'syncSummary';
+
+    /**
      * At most ten digits before the point, two after it: what the ledger holds as an amount.
      */
     private const AMOUNT_PATTERN = '/^\d{1,10}(?:\.\d{1,2})?$/';
@@ -148,6 +153,7 @@ final class CheckoutCredit
 
         $this->amount = '';
         $this->emit(self::PAYMENT_PARTS_CHANGED);
+        $this->emit(self::SUMMARY_CHANGED);
     }
 
     #[LiveAction]
@@ -163,6 +169,7 @@ final class CheckoutCredit
         $this->usage->withdraw($cart);
         $this->amount = '';
         $this->emit(self::PAYMENT_PARTS_CHANGED);
+        $this->emit(self::SUMMARY_CHANGED);
     }
 
     private function customer(): ?Customer

@@ -15,8 +15,10 @@ declare(strict_types=1);
 namespace CreditAccount\Tests\Integration;
 
 use CreditAccount\CreditAccount;
+use CreditAccount\Front\CheckoutSummaryParts;
 use CreditAccount\Front\PrivateResponseListener;
 use CreditAccount\Hook\Theme\CheckoutPaymentPartsThemeHook;
+use CreditAccount\Hook\Theme\CheckoutSummaryThemeHook;
 use CreditAccount\Ledger\Author;
 use CreditAccount\Ledger\CreditAmount;
 use CreditAccount\Ledger\CreditBalance;
@@ -151,7 +153,7 @@ final class CheckoutCreditBlockTest extends IntegrationTestCase
         self::assertSame('12.50', $this->module()->getAmountAppliedToCart($cart));
         self::assertSame('', $component->amount, 'the field starts again once the amount is applied');
         self::assertSame('12.50', $component->getApplied());
-        self::assertSame([['event' => 'PAYMENT_PARTS_CHANGED', 'data' => [], 'target' => null, 'componentName' => null]], $this->responder->getEventsToEmit());
+        self::assertSame(['PAYMENT_PARTS_CHANGED', 'syncSummary'], array_column($this->responder->getEventsToEmit(), 'event'), 'the payment step and the summary draw again');
     }
 
     #[Test]
@@ -292,6 +294,48 @@ final class CheckoutCreditBlockTest extends IntegrationTestCase
         self::assertSame([], $this->responder->getEventsToEmit());
     }
 
+    #[Test]
+    public function theSummarySaysWhatTheCreditPaysAndWhatIsLeftToPayUnderAnUnchangedTotal(): void
+    {
+        $this->credit($this->customer, '50');
+        $cart = $this->signInWithCart();
+        $this->usage()->set($cart, CreditAmount::ofDecimal('20'));
+
+        $html = html_entity_decode($this->summaryHook()->render('checkout.summary.bottom', ['summary' => ['total_taxed_price' => 99.9]]));
+
+        self::assertStringContainsString($this->formatted('20'), $this->lineText($html, 'checkout-summary-credit'));
+        self::assertStringContainsString($this->formatted('79.90'), $this->lineText($html, 'checkout-summary-left'));
+        self::assertTrue($this->getService(RequestStack::class)->getMainRequest()?->attributes->get(PrivateResponseListener::ATTRIBUTE));
+    }
+
+    #[Test]
+    public function theCreditNeverPaysMoreThanTheTotalOnTheSummary(): void
+    {
+        $this->credit($this->customer, '150');
+        $cart = $this->signInWithCart();
+        $this->usage()->set($cart, CreditAmount::ofDecimal('120'));
+
+        $html = html_entity_decode($this->summaryHook()->render('checkout.summary.bottom', ['summary' => ['total_taxed_price' => '100.00']]));
+
+        self::assertStringContainsString($this->formatted('100'), $this->lineText($html, 'checkout-summary-credit'));
+        self::assertStringContainsString($this->formatted('0'), $this->lineText($html, 'checkout-summary-left'));
+    }
+
+    #[Test]
+    public function theSummaryIsLeftAsItIsWhenNothingIsAppliedAndForAVisitor(): void
+    {
+        $parameters = ['summary' => ['total_taxed_price' => 100.0]];
+        self::assertTrue($this->summaryHook()->supports('checkout.summary.bottom'));
+
+        $this->credit($this->customer, '50');
+        $cart = $this->signInWithCart();
+        self::assertSame('', $this->summaryHook()->render('checkout.summary.bottom', $parameters), 'nothing applied');
+
+        $this->usage()->set($cart, CreditAmount::ofDecimal('20'));
+        $this->session()->clearCustomerUser();
+        self::assertSame('', $this->summaryHook()->render('checkout.summary.bottom', $parameters), 'a visitor');
+    }
+
     protected function paymentFactory(): FixtureFactory
     {
         return $this->createFixtureFactory();
@@ -354,6 +398,29 @@ final class CheckoutCreditBlockTest extends IntegrationTestCase
             $this->getService(SecurityContext::class),
             $this->getService(RequestStack::class),
             new CreditBalance(),
+        );
+    }
+
+    /**
+     * The words of a line of the summary, its label and its amount.
+     */
+    private function lineText(string $html, string $testId): string
+    {
+        self::assertSame(1, preg_match('/data-testid="'.$testId.'"[^>]*>(.*?<\/div>.*?<\/div>)/s', $html, $matches), $testId.' is drawn');
+
+        return trim((string) preg_replace('/\s+/', ' ', strip_tags($matches[1])));
+    }
+
+    private function summaryHook(): CheckoutSummaryThemeHook
+    {
+        return new CheckoutSummaryThemeHook(
+            $this->getService(Environment::class),
+            $this->getService(SecurityContext::class),
+            $this->getService(RequestStack::class),
+            $this->getService(CartFacade::class),
+            new CheckoutSummaryParts(static::getContainer()),
+            $this->getService(TranslatorInterface::class),
+            $this->getService(FormatService::class),
         );
     }
 

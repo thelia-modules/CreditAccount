@@ -21,6 +21,7 @@ Store credit for the customers of a Thelia 3 shop. Version 4.0 requires Thelia 3
 - When the order is canceled, the core gives the part back: exactly what it spent is credited again, once, with the expiry of a credit written now.
 - When the order is refunded, the core leaves the part `settled`: the module gives the spending back itself, in full, by the same write as a release. A cancellation after the refund credits nothing a second time.
 - The credit spent on an order is deducted from the amount the order earns on (loyalty), like a discount, in proportion of the lines that are not excluded: 100 of goods and 30 paid with credit earn on 70.
+- In Flexy, the payment step offers the credit in the `checkout.payment.parts` hook, and the summary says under its total, in `checkout.summary.bottom`, what the credit pays and what is left to pay once every means paying inside the shop took its part. The total itself does not change.
 - The amount chosen is forgotten when the order is paid; until then it stays on the cart, so an unpaid order can be presented to the payment again.
 
 ## Installation
@@ -125,6 +126,7 @@ Crédit client pour une boutique Thelia 3. La version 4.0 demande Thelia 3.3.
 - Au paiement de la commande, le cœur règle la part crédit : la dépense est écrite dans le journal sous verrou du compte. Si le solde ne couvre plus la part, le paiement est refusé et rien n'est dépensé.
 - Si le crédit ne couvre qu'une partie de la commande, le prestataire choisi doit encaisser le solde restant (`Thelia\Module\BalanceChargingPaymentModuleInterface`), sinon la commande est refusée.
 - À l'annulation de la commande, le cœur rend la part : exactement ce qu'elle a dépensé est recrédité, une seule fois. Au remboursement, le cœur laisse la part réglée : le module restitue lui-même la dépense en entier, par la même écriture ; une annulation ensuite ne recrédite rien.
+- Dans Flexy, l'étape de paiement propose le crédit (point `checkout.payment.parts`) et le récapitulatif affiche sous son total, sans le changer, la part payée en crédit et le reste à payer (point `checkout.summary.bottom`).
 - La part payée en crédit est déduite de la base du gain de fidélité, comme une remise (100 d'articles dont 30 payés en crédit : gain calculé sur 70).
 
 ## Configuration
@@ -142,4 +144,4 @@ Un mouvement manuel (back-office ou API) demande le droit dédié `module.credit
 
 ## Mise à jour depuis la 3.x
 
-L'activation de la nouvelle version lance la migration automatique : l'historique 3.x est copié dans le journal, un mouvement de report comble l'écart éventuel avec le solde affiché, la date d'expiration passe sur les crédits, la grille du module Loyalty est reprise dans la grille de fidélité (si elle est vide ; **désactivez ensuite le module Loyalty** : tant qu'il est actif, il crédite lui-même et le gain de ce module reste suspendu, pour éviter le double gain), et les tables 3.x sont conservées. L'ancien événement `creditAccount.addAccount` reste accepté. Les boucles Smarty, les routes `/creditAccount/use` et `/creditAccount/cancel` et le back-office Smarty ont disparu.
+L'activation de la nouvelle version lance la migration automatique : l'historique 3.x est copié dans le journal, un mouvement de report comble l'écart éventuel avec le solde affiché, la date d'expiration passe sur les crédits, la grille du module Loyalty est reprise dans la grille de fidélité (si elle est vide ; son mode « tranche unique » devient un pourcentage, crédit ÷ tranche arrondi à deux décimales, si aucun mode n'était choisi ; **désactivez ensuite le module Loyalty** : tant qu'il est actif, il crédite lui-même et le gain de ce module reste suspendu, pour éviter le double gain), et les tables 3.x sont conservées. L'ancien événement `creditAccount.addAccount` reste accepté. Les boucles Smarty, les routes `/creditAccount/use` et `/creditAccount/cancel` et le back-office Smarty ont disparu.

@@ -32,4 +32,6 @@ return array(
     'Withdraw' => 'Withdraw',
     'Enter an amount above zero, with at most two decimals.' => 'Enter an amount above zero, with at most two decimals.',
     'Your credit account only holds %balance%.' => 'Your credit account only holds %balance%.',
+    'Paid with your credit account' => 'Paid with your credit account',
+    'Left to pay' => 'Left to pay',
 );
