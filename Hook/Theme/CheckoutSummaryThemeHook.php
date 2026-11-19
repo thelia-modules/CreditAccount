@@ -17,11 +17,11 @@ namespace CreditAccount\Hook\Theme;
 use CreditAccount\CreditAccount;
 use CreditAccount\Front\CheckoutSummaryParts;
 use CreditAccount\Front\PrivateResponseListener;
+use CreditAccount\Ledger\CreditAmount;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Thelia\Core\Hook\Theme\ThemeHookInterface;
 use Thelia\Core\Security\SecurityContext;
-use Thelia\Core\Template\Helper\FormatService;
 use Thelia\Domain\Cart\CartFacade;
 use Thelia\Model\Customer;
 use Twig\Environment;
@@ -41,7 +41,6 @@ final readonly class CheckoutSummaryThemeHook implements ThemeHookInterface
         private CartFacade $cartFacade,
         private CheckoutSummaryParts $parts,
         private TranslatorInterface $translator,
-        private FormatService $format,
     ) {
     }
 
@@ -74,8 +73,8 @@ final readonly class CheckoutSummaryThemeHook implements ThemeHookInterface
         $this->requestStack->getMainRequest()?->attributes->set(PrivateResponseListener::ATTRIBUTE, true);
 
         return $this->twig->render('@CreditAccountModule/theme_hook/checkout-summary.html.twig', [
-            'credit' => $this->format->money($parts['credit'], (int) $cart->getCurrencyId()),
-            'left' => $this->format->money($parts['left'], (int) $cart->getCurrencyId()),
+            'credit' => CreditAmount::ofDecimal($parts['credit'])->toDecimal(),
+            'left' => CreditAmount::ofDecimal($parts['left'])->toDecimal(),
             'texts' => [
                 'credit' => $this->translator->trans('Paid with your credit account', [], CreditAccount::DOMAIN),
                 'left' => $this->translator->trans('Left to pay', [], CreditAccount::DOMAIN),

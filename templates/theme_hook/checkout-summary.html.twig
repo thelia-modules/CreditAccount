@@ -1,10 +1,10 @@
 {# Under the total of the checkout summary (hook checkout.summary.bottom): the part the credit account pays and what
-   is left to pay with the means chosen next. The lines of the summary, drawn the way the theme draws its own. #}
+   is left to pay with the means chosen next. The lines of the summary, drawn and formatted the way the theme draws its own. #}
 <div class="Summary-line" data-testid="checkout-summary-credit">
     <div>{{ texts.credit }}</div>
-    <div><span dir="ltr">&minus;{{ credit }}</span></div>
+    <div><span dir="ltr">&minus;&#8288;{{ credit|format_currency(current_currency_code(), locale: lang_code) }}</span></div>
 </div>
 <div class="Summary-line Summary-total" data-testid="checkout-summary-left">
     <div>{{ texts.left }}</div>
-    <div><span dir="ltr">{{ left }}</span></div>
+    <div><span dir="ltr">{{ left|format_currency(current_currency_code(), locale: lang_code) }}</span></div>
 </div>

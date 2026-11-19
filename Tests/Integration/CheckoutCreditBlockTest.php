@@ -303,8 +303,8 @@ final class CheckoutCreditBlockTest extends IntegrationTestCase
 
         $html = html_entity_decode($this->summaryHook()->render('checkout.summary.bottom', ['summary' => ['total_taxed_price' => 99.9]]));
 
-        self::assertStringContainsString($this->formatted('20'), $this->lineText($html, 'checkout-summary-credit'));
-        self::assertStringContainsString($this->formatted('79.90'), $this->lineText($html, 'checkout-summary-left'));
+        self::assertStringContainsString('20.00', $this->lineText($html, 'checkout-summary-credit'));
+        self::assertStringContainsString('79.90', $this->lineText($html, 'checkout-summary-left'));
         self::assertTrue($this->getService(RequestStack::class)->getMainRequest()?->attributes->get(PrivateResponseListener::ATTRIBUTE));
     }
 
@@ -317,8 +317,8 @@ final class CheckoutCreditBlockTest extends IntegrationTestCase
 
         $html = html_entity_decode($this->summaryHook()->render('checkout.summary.bottom', ['summary' => ['total_taxed_price' => '100.00']]));
 
-        self::assertStringContainsString($this->formatted('100'), $this->lineText($html, 'checkout-summary-credit'));
-        self::assertStringContainsString($this->formatted('0'), $this->lineText($html, 'checkout-summary-left'));
+        self::assertStringContainsString('100.00', $this->lineText($html, 'checkout-summary-credit'));
+        self::assertStringContainsString('0.00', $this->lineText($html, 'checkout-summary-left'));
     }
 
     #[Test]
@@ -420,7 +420,6 @@ final class CheckoutCreditBlockTest extends IntegrationTestCase
             $this->getService(CartFacade::class),
             new CheckoutSummaryParts(static::getContainer()),
             $this->getService(TranslatorInterface::class),
-            $this->getService(FormatService::class),
         );
     }
 
