@@ -1,22 +1,22 @@
 {# The credit account on the payment step. The amount is sent with the button or Enter ("norender": typing
    changes the model in the browser only, no request per character). Variables: this.balance, this.applied
-   (decimal strings), this.currencyId, this.texts, this.error, this.amount. Money goes through format_money. #}
+   (decimal strings), this.balanceText and this.appliedText (written as the theme writes money), this.texts,
+   this.error, this.amount. #}
 {% set texts = this.texts %}
 {% set balance = this.balance %}
 {% set applied = this.applied %}
-{% set currencyId = this.currencyId %}
 {% set error = this.error %}
 {% set amount = this.amount %}
 <div {{ attributes }} data-loading="addClass(opacity-50 pointer-events-none)" data-testid="checkout-credit">
     <p class="paragraph-3 text-black mt-3">
         {{ texts.available }}
-        <strong dir="ltr" data-testid="checkout-credit-balance">{{ format_money(balance, currencyId) }}</strong>
+        <strong dir="ltr" data-testid="checkout-credit-balance">{{ this.balanceText }}</strong>
     </p>
 
     {% if applied|number_format(2) != '0.00' %}
         <p class="paragraph-3 text-black mt-1">
             {{ texts.applied }}
-            <strong dir="ltr" data-testid="checkout-credit-applied">{{ format_money(applied, currencyId) }}</strong>
+            <strong dir="ltr" data-testid="checkout-credit-applied">{{ this.appliedText }}</strong>
         </p>
     {% endif %}
 

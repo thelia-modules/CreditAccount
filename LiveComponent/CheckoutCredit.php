@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace CreditAccount\LiveComponent;
 
 use CreditAccount\CreditAccount;
+use CreditAccount\Front\ThemeMoney;
 use CreditAccount\Ledger\CreditAmount;
 use CreditAccount\Ledger\CreditBalance;
 use CreditAccount\Ledger\InsufficientCreditException;
@@ -26,7 +27,6 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\ComponentToolsTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Thelia\Core\Security\SecurityContext;
-use Thelia\Core\Template\Helper\FormatService;
 use Thelia\Domain\Cart\CartFacade;
 use Thelia\Model\Cart;
 use Thelia\Model\Currency;
@@ -74,15 +74,9 @@ final class CheckoutCredit
         private readonly SecurityContext $securityContext,
         private readonly CreditBalance $balance,
         private readonly CreditCartUsage $usage,
-        private readonly FormatService $format,
+        private readonly ThemeMoney $money,
         private readonly TranslatorInterface $translator,
     ) {
-    }
-
-    public function getCurrencyId(): int
-    {
-        // The credit is kept in the default currency, whatever currency the visitor browses in.
-        return (int) Currency::getDefaultCurrency()->getId();
     }
 
     /**
@@ -144,7 +138,7 @@ final class CheckoutCredit
         } catch (InsufficientCreditException $exception) {
             $this->error = $this->translator->trans(
                 'Your credit account only holds %balance%.',
-                ['%balance%' => $this->format->money($exception->balance->toDecimal(), $this->getCurrencyId())],
+                ['%balance%' => $this->money->format($exception->balance->toDecimal(), $this->currencyCode())],
                 CreditAccount::DOMAIN,
             );
 
@@ -170,6 +164,27 @@ final class CheckoutCredit
         $this->amount = '';
         $this->emit(self::PAYMENT_PARTS_CHANGED);
         $this->emit(self::SUMMARY_CHANGED);
+    }
+
+    /**
+     * The balance, written as the theme writes money.
+     */
+    public function getBalanceText(): string
+    {
+        return $this->money->format($this->getBalance(), $this->currencyCode());
+    }
+
+    /**
+     * What the buyer chose to spend, written as the theme writes money.
+     */
+    public function getAppliedText(): string
+    {
+        return $this->money->format($this->getApplied(), $this->currencyCode());
+    }
+
+    private function currencyCode(): string
+    {
+        return (string) Currency::getDefaultCurrency()->getCode();
     }
 
     private function customer(): ?Customer

@@ -17,6 +17,7 @@ namespace CreditAccount\Tests\Integration;
 use CreditAccount\CreditAccount;
 use CreditAccount\Front\CheckoutSummaryParts;
 use CreditAccount\Front\PrivateResponseListener;
+use CreditAccount\Front\ThemeMoney;
 use CreditAccount\Hook\Theme\CheckoutPaymentPartsThemeHook;
 use CreditAccount\Hook\Theme\CheckoutSummaryThemeHook;
 use CreditAccount\Ledger\Author;
@@ -37,7 +38,6 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\UX\LiveComponent\LiveResponder;
 use Thelia\Core\HttpFoundation\Session\Session;
 use Thelia\Core\Security\SecurityContext;
-use Thelia\Core\Template\Helper\FormatService;
 use Thelia\Domain\Cart\CartFacade;
 use Thelia\Model\Cart;
 use Thelia\Model\Currency;
@@ -100,8 +100,7 @@ final class CheckoutCreditBlockTest extends IntegrationTestCase
         $html = html_entity_decode($this->hook()->render('checkout.payment.parts', $this->parameters($this->creditModule)));
 
         self::assertStringContainsString('data-live-name-value="CreditAccount:CheckoutCredit"', $html);
-        self::assertStringContainsString($this->formatted('1234.50'), $this->text($html, 'checkout-credit-balance'), 'the balance is written as the shop writes money');
-        self::assertNotSame('1234.50', $this->formatted('1234.50'), 'the test shop must format money');
+        self::assertSame('€1,234.50', $this->text($html, 'checkout-credit-balance'), 'the balance is written as the theme writes money');
         self::assertStringContainsString($this->formatted('20'), $this->text($html, 'checkout-credit-applied'));
         self::assertStringContainsString('data-live-action-param="apply"', $html, 'the amount is sent by the form, not on each keystroke');
         self::assertStringContainsString('data-model="norender|amount"', $html, 'typing changes the model in the browser only');
@@ -381,7 +380,7 @@ final class CheckoutCreditBlockTest extends IntegrationTestCase
 
     private function formatted(string $amount): string
     {
-        return $this->getService(FormatService::class)->money($amount, Currency::getDefaultCurrency()->getId());
+        return $this->money()->format($amount, (string) Currency::getDefaultCurrency()->getCode());
     }
 
     private function text(string $html, string $testId): string
@@ -420,7 +419,13 @@ final class CheckoutCreditBlockTest extends IntegrationTestCase
             $this->getService(CartFacade::class),
             new CheckoutSummaryParts(static::getContainer()),
             $this->getService(TranslatorInterface::class),
+            $this->money(),
         );
+    }
+
+    private function money(): ThemeMoney
+    {
+        return new ThemeMoney($this->getService(RequestStack::class));
     }
 
     private function component(): CheckoutCredit
@@ -430,7 +435,7 @@ final class CheckoutCreditBlockTest extends IntegrationTestCase
             $this->getService(SecurityContext::class),
             new CreditBalance(),
             $this->usage(),
-            $this->getService(FormatService::class),
+            $this->money(),
             $this->getService(TranslatorInterface::class),
         );
         $component->setLiveResponder($this->responder);
